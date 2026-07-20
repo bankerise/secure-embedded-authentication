@@ -1,14 +1,16 @@
 # Bankerise Secure Embedded Authentication (SEA)
 
-## Technical Specification — v1.0
+## Technical Specification — v1.1
 
 | | |
 |---|---|
 | **Status** | Draft for review |
-| **Version** | 1.0 |
+| **Version** | 1.1 |
 | **Date** | 2026-07-20 |
 | **Audience** | Bankerise platform engineering, mobile teams, security review, bank-side auditors |
 | **Applies to** | Bankerise mobile apps (React Native, iOS + Android) authenticating against Keycloak |
+
+> **v1.1 changes:** added the delivery architecture — standalone platform-native core SDKs (`sea-core-ios`, `sea-core-android`) with a thin React Native bridge (§1.3.5, §4.2–§4.8, §7), lockstep artifact versioning and release pipeline (§24), and native demo apps as the device-lab harnesses (§23.3).
 
 ---
 
@@ -28,6 +30,7 @@ Bankerise currently performs mobile login through an in-app system browser (SFSa
 2. **Keycloak stays authoritative.** All authentication logic (credential validation, MFA orchestration, passkey ceremonies, password reset, brokering) lives in Keycloak. The mobile layer renders, isolates, and observes — it never re-implements authentication.
 3. **The native/web seam is the security perimeter.** The single most sensitive interface in this design is the handoff of the authorization code from the WebView to native code (§6). It is specified exhaustively and everything else is forbidden by default (§13).
 4. **Escape hatches are mandatory.** Embedded WebView authentication depends on OS behavior that changes across releases. Every deployment ships with a remotely-controllable fallback to system-browser authentication (§21).
+5. **Core-first, bridge-thin.** All authentication, security, and WebView logic lives in standalone platform-native core SDKs with no React Native dependency. The RN layer is a marshalling bridge containing zero logic (§4.2, §7). This keeps the audited surface pure Swift/Kotlin, lets the hard platform work (passkeys, entitlements, WebView behavior) iterate in Xcode/Android Studio directly, and makes the native SDKs independently deliverable to banks with fully native apps.
 
 ### 1.4 Why Embedded Authentication Instead of Browser Redirects
 
@@ -44,13 +47,14 @@ The trade-offs of this decision, and why they are acceptable, are recorded forma
 
 ### 2.1 Goals
 
-- G1. Authorization Code + PKCE login against Keycloak inside an embedded, hardened WebView, on iOS (WKWebView) and Android (WebView), surfaced to React Native as a single component.
+- G1. Authorization Code + PKCE login against Keycloak inside an embedded, hardened WebView, implemented as standalone native SDKs on iOS (WKWebView) and Android (WebView), surfaced to React Native as a single thin component.
 - G2. **Passkeys (WebAuthn) as a first-class v1 authentication method**, executed inside the embedded WebView where platform support allows, with a specified fallback ceremony path (§10).
 - G3. Persistent Keycloak SSO session across app restarts via a persistent, protected cookie store (§11), producing near-silent re-authentication.
 - G4. Support for Keycloak-brokered **third-party web-based IdPs** rendered within the embedded flow, with a per-IdP embed/external policy (§12.4).
 - G5. Full support for Keycloak-driven MFA, required actions, and password reset without mobile releases.
 - G6. Binance-grade UX: native header, no browser affordances, first-frame-fast (§18, §22).
 - G7. Auditable security posture mapped to OWASP MASVS and the OAuth 2.0 Security BCP, with explicit documentation of the RFC 8252 deviation (§3).
+- G8. SEA ships as three lockstep-versioned artifacts — an iOS XCFramework, an Android AAR, and a React Native library wrapping both (§4.2) — with the native SDKs independently consumable by fully native banking apps and auditable in isolation from any RN tooling.
 
 ### 2.2 Non-Goals
 
@@ -109,14 +113,16 @@ Embedded WebView (this spec) + navigation allowlisting (§7.3) + native-only cod
 
 ## 4. High-Level Architecture
 
+### 4.1 Runtime architecture
+
 ```
                     Bankerise Mobile App
                            |
                     React Native Layer
               <SecureAuthenticationView/>
                            |
-              Secure Authentication Component
-              (native module, per platform)
+              Secure Authentication Core
+               (sea-core, per platform)
                            |
           +----------------+----------------+
           |                                 |
@@ -144,8 +150,78 @@ Embedded WebView (this spec) + navigation allowlisting (§7.3) + native-only cod
 Flow ownership:
 
 - **React Native layer**: presentation orchestration, success/cancel/error callbacks, no security logic.
-- **Native module (per platform)**: PKCE generation, WebView hardening, navigation filtering, redirect interception, code capture, token exchange, secure storage, attestation, telemetry.
+- **Native core (per platform)**: PKCE generation, WebView hardening, navigation filtering, redirect interception, code capture, token exchange, secure storage, attestation, telemetry.
 - **Keycloak**: everything about *authentication itself*.
+
+### 4.2 Artifact architecture
+
+SEA is developed core-first (§1.3.5) and delivered as three artifacts:
+
+```
+     sea-core-ios                  sea-core-android
+  Swift Package                    Gradle library
+  → signed XCFramework             → AAR
+        \                              /
+         \                            /
+              sea-react-native
+        thin Fabric bridge, zero logic,
+        depends on exact core versions
+        → npm package
+```
+
+| Artifact | Contains | Consumers |
+|---|---|---|
+| `sea-core-ios` / `sea-core-android` | Everything in §§5–17: WebView surface, navigation policy, §6 handoff, token custody, session/logout, attestation hooks, screen security, telemetry emission. No RN dependency of any kind. | `sea-react-native`; fully native bank apps (direct SDK integration); future non-RN wrappers (§28) |
+| `sea-react-native` | Prop/config marshalling in, event marshalling out. **No authentication, navigation, storage, crypto, or networking logic** — enforced by lint (§24). | Bankerise RN apps |
+
+Consequences this buys, stated for the record: (a) the bank-facing security review and pen test scope (§23.2) is a pure Swift/Kotlin codebase with no Metro/JSI/node_modules in scope; (b) the platform-fragile work — passkeys, entitlements, WebView behavior — iterates in Xcode/Android Studio via native demo apps without an RN build in the loop; (c) the native SDKs are standalone deliverables for banks with existing native apps.
+
+### 4.3 Core API contract
+
+The two cores expose deliberately mirror-image APIs, documented as a versioned contract file in `docs/` that both platforms and the bridge conform to:
+
+- `SEASession.start(config) → callbacks` — config carries realm URL, client id, locale, presentation, timeout, optional `idpHint`/`prompt`/`acrValues`, and the JS-narrowable domain allowlist (§7.1 rules unchanged).
+- `SEAAuthView` — `UIViewController` / `Fragment` hosting the hardened WebView surface (§8.1, §9.1).
+- Callbacks: opaque success signal, `cancelled`, and the `SEAError` taxonomy (§7.2).
+- All event and error payloads are defined as **serializable structs in the cores**; the bridge translates struct → `WritableMap` and nothing else (§7.4).
+
+Any change to authentication behavior that would require the contract to grow "knowledge" of credential formats or flow ordering violates §12.5, regardless of which layer it lands in.
+
+### 4.4 Repository layout
+
+Dedicated monorepo, independent of Bankerise:
+
+```
+sea/
+  packages/
+    sea-core-ios/          # Swift package
+    sea-core-android/      # Gradle library module
+    sea-react-native/      # bridge (codegen specs + glue)
+  apps/
+    demo-ios/              # native harness — primary device-lab app (§23.3)
+    demo-android/          # native harness — primary device-lab app (§23.3)
+    demo-rn/               # bridge validation only
+  infra/                   # Keycloak compose + realm export + AASA/assetlinks
+  docs/                    # this spec, API contract, §25 matrix results
+```
+
+### 4.5 Packaging and distribution
+
+- **iOS**: Swift Package for native consumers. The RN podspec consumes the core by local path during development; releases vendor the CI-built, signed XCFramework. (This dual-mode setup is the main build-plumbing cost of the architecture; it is paid once.)
+- **Android**: composite/`includeBuild` project dependency during development; releases publish the AAR to a Maven registry (GitHub Packages or bank-hosted Nexus for air-gapped deployments).
+- **RN**: npm package pinning exact core versions (§4.6).
+
+### 4.6 Versioning policy
+
+Lockstep semantic versioning across all three artifacts: `sea-react-native@X.Y.Z` pins `sea-core-*@X.Y.Z` exactly, and all three are released together by a single pipeline (§24). Independent version drift between cores and bridge is prohibited in v1 — the flexibility buys nothing and costs a compatibility matrix.
+
+### 4.7 Threading and callback contract
+
+Normative, because WKWebView/WebView are main-thread-bound and RN calls in from its own threads: **all public core API is main-thread-only; all callbacks are delivered on the main thread.** The cores enforce this with debug assertions at every public entry point; the bridge is responsible for hopping to main before delegating.
+
+### 4.8 Build phasing
+
+Phases 1–2 (the §6 handoff perimeter and the §10/§25 passkey spike) are implemented entirely in the cores, driven by the native demo apps — RN is not in the critical path and need not be installed. The bridge is a separate workstream that starts once the core API contract (§4.3) stabilizes at the end of Phase 1, so auth is never debugged *through* the bridge.
 
 ---
 
@@ -233,7 +309,9 @@ POST https://auth.bank.com/realms/{realm}/protocol/openid-connect/token
 
 ---
 
-## 7. React Native Component Design
+## 7. React Native Bridge (`sea-react-native`)
+
+This section specifies the RN-facing surface. Per §4.2, this package is a marshalling bridge only: every prop maps to a core config field, every callback maps to a core event struct, and it contains no authentication, navigation, storage, crypto, or networking logic of its own.
 
 ### 7.1 Public API
 
@@ -274,6 +352,14 @@ Lifecycle management (mount → pre-warm → present → dismiss), navigation fi
 - `target=_blank` / new-window requests: opened in the same WebView if allowlisted, otherwise blocked. Never opened externally from within an auth flow, with the single exception of the broker external-tab escape (§12.4).
 - `http:`, `file:`, `content:`, `intent:`, `javascript:`, custom schemes: blocked and reported as `AUTH_NAV_BLOCKED` telemetry.
 - Downloads: blocked.
+
+### 7.4 Bridge implementation notes
+
+- New-architecture-first: the auth surface is a **Fabric native component**; lifecycle and imperative interactions go through component commands/events rather than a separate module where possible.
+- Codegen specs live in this package; generated glue delegates immediately into `sea-core-*` with no intermediate logic.
+- Event payload translation is mechanical: core-defined structs (§4.3) → `WritableMap`. The `SEAError` taxonomy crosses the bridge unchanged.
+- Main-thread hop before every core call, per §4.7.
+- Bridge purity is CI-enforced (§24): bridge sources may not import networking, crypto, storage, or WebView APIs.
 
 ---
 
@@ -708,11 +794,16 @@ Login (password, passkey, passkey-fallback path), silent SSO after restart, SSO 
 
 Device-lab matrix over §25: WebAuthn ceremonies on each (OS, WebView) floor combination; annual re-validation at OS beta season (WebView auth is the component most likely to break in September).
 
+Harnesses: the native demo apps (`demo-ios`, `demo-android`, §4.4) are the primary device-lab and spike vehicles — they exercise the cores with no RN in the loop. `demo-rn` validates only the bridge: prop marshalling, event delivery, threading (§4.7), and parity of the §7.1 API against the core contract.
+
 ---
 
 ## 24. CI/CD Guardrails
 
 - The §13 forbidden list and §14 bridge maximum are enforced by lint rules failing the build.
+- **Bridge purity lint** (§4.2, §7.4): `sea-react-native` sources may not import networking, crypto, storage, or WebView APIs; violations fail the build.
+- **Lockstep release pipeline** (§4.6): one pipeline builds and publishes all three artifacts — signed XCFramework, AAR, npm package — atomically; if any artifact fails, no artifact ships.
+- **Cross-artifact contract tests**: the §4.3 API contract is exercised directly against both cores (native test targets) and through the bridge via `demo-rn`, so contract drift between platforms or across the bridge is caught pre-release.
 - Release gate: functional suite (§23.1) green on reference devices for both `EMBEDDED` and `SYSTEM_BROWSER` modes — the fallback path must never rot.
 - Config-schema validation for §12.4 and §21 remote config.
 
@@ -780,6 +871,7 @@ Device-lab matrix over §25: WebAuthn ceremonies on each (OS, WebView) floor com
 - **Continuous authentication** signals (behavioral, device posture) feeding the bank risk engine at token refresh.
 - **Voice authentication integration**: Bankerise Voice Trust Engine (speaker verification + anti-spoofing) as a Keycloak authenticator for voice-channel step-up, sharing the §16 attestation substrate.
 - **AI risk engine integration**: §20 event stream as a real-time feature source for adaptive authentication policies.
+- **Additional wrappers over the same cores**: a Flutter plugin, and direct native-SDK distribution to banks with fully native apps — the cores are already the deliverable (§4.2), so this is a packaging and licensing exercise, not an engineering one.
 
 ---
 
