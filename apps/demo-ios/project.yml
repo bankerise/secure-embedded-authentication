@@ -1,0 +1,75 @@
+name: SEADemo
+options:
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "15.0"
+
+# Local SPM dependency on the core package under active parallel development.
+# See docs/api-contract-ios-v1.md for the normative API this app builds against.
+packages:
+  SEACore:
+    path: ../../packages/sea-core-ios
+
+targets:
+  SEADemo:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Sources
+        excludes:
+          - Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bankerise.sea.demo
+        PRODUCT_NAME: SEADemo
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        ENABLE_PREVIEWS: YES
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        # Hand-authored Info.plist (WKAppBoundDomains, CFBundleURLTypes,
+        # DEV-ONLY ATS exception) — referenced directly as a build setting so
+        # XcodeGen treats it as an input file, not a generation target. Using
+        # the top-level `info:` key instead would make XcodeGen overwrite this
+        # file with its own generated template on every `xcodegen generate`.
+        INFOPLIST_FILE: Sources/Info.plist
+    dependencies:
+      - package: SEACore
+
+  # End-to-end device-lab smoke test (§23.3): drives the real login flow
+  # through the actual UI, so the §6 handoff perimeter is exercised without RN
+  # and without a manual tap. Runs against the local TLS Keycloak (infra/).
+  SEADemoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: UITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bankerise.sea.demo.uitests
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: SEADemo
+    dependencies:
+      - target: SEADemo
+
+schemes:
+  SEADemo:
+    build:
+      targets:
+        SEADemo: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - SEADemoUITests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

@@ -1,0 +1,18 @@
+/* SEACore — English */
+
+"sea.loading" = "Loading…";
+"sea.action.retry" = "Retry";
+"sea.action.close" = "Close";
+"sea.capture.warning" = "Screen recording detected. For your security, this content is hidden while recording is active.";
+
+"sea.error.network.title" = "Connection Problem";
+"sea.error.network.message" = "We couldn't reach the login page. Please check your connection and try again.";
+
+"sea.error.timeout.title" = "This Is Taking Too Long";
+"sea.error.timeout.message" = "The login attempt timed out. Please try again.";
+
+"sea.error.server.title" = "Service Unavailable";
+"sea.error.server.message" = "The login service is temporarily unavailable. Please try again shortly.";
+
+"sea.error.generic.title" = "Something Went Wrong";
+"sea.error.generic.message" = "We couldn't complete the login. Please try again.";

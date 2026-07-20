@@ -1,0 +1,18 @@
+/* SEACore — Français */
+
+"sea.loading" = "Chargement…";
+"sea.action.retry" = "Réessayer";
+"sea.action.close" = "Fermer";
+"sea.capture.warning" = "Enregistrement d'écran détecté. Pour votre sécurité, ce contenu est masqué pendant l'enregistrement.";
+
+"sea.error.network.title" = "Problème de connexion";
+"sea.error.network.message" = "Impossible d'accéder à la page de connexion. Veuillez vérifier votre connexion et réessayer.";
+
+"sea.error.timeout.title" = "Cela prend trop de temps";
+"sea.error.timeout.message" = "La tentative de connexion a expiré. Veuillez réessayer.";
+
+"sea.error.server.title" = "Service indisponible";
+"sea.error.server.message" = "Le service de connexion est temporairement indisponible. Veuillez réessayer sous peu.";
+
+"sea.error.generic.title" = "Un problème est survenu";
+"sea.error.generic.message" = "La connexion n'a pas pu aboutir. Veuillez réessayer.";

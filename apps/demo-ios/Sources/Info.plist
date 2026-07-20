@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleDisplayName</key>
+	<string>SEA Demo</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+
+	<!--
+	 §6.5 / §8.2 (api-contract-ios-v1.md §7): WKAppBoundDomains scopes the WebView's
+	 App-Bound Domains restriction (limitsNavigationsToAppBoundDomains = true, enforced
+	 inside SEACore). "auth.bank.local" is the demo/dev auth domain used by the local
+	 infra Keycloak realm; "localhost" is included so the fuzz/mock corpus and local
+	 dev backends can be exercised on-device. Production consumers replace this list
+	 with their real auth domain(s) only.
+	-->
+	<key>WKAppBoundDomains</key>
+	<array>
+		<string>auth.bank.local</string>
+		<string>localhost</string>
+	</array>
+
+	<!--
+	 §6.3: the callback redirect URI is a custom scheme, compiled into SEACore as
+	 callbackScheme and registered here so iOS routes it back to this app if the
+	 WebView ever let it escape to the OS (it shouldn't — SEACore intercepts
+	 in-process before dispatch). Registration here is a defense-in-depth / OS-level
+	 requirement, not the primary capture mechanism.
+	-->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.bankerise.sea.demo</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>bankerise-auth</string>
+			</array>
+		</dict>
+	</array>
+
+	<!--
+	 NO App Transport Security exceptions — deliberately, and this is worth
+	 keeping that way.
+
+	 An earlier revision carried an NSExceptionAllowsInsecureHTTPLoads entry for
+	 "localhost", to let this harness talk to a plaintext local Keycloak. It has
+	 been removed: infra/ now terminates TLS with an mkcert certificate that the
+	 simulator trusts (infra/trust-ca-simulator.sh), so local development runs
+	 over real HTTPS.
+
+	 That matters beyond tidiness. SEA's own validator rejects non-https
+	 authorize URLs (§6.2) and §8.2 forbids any debug bypass of TLS handling, so
+	 an ATS hole here would have been a permanent invitation to add a matching
+	 hole in the core "just for dev". There is now no debug-only security
+	 relaxation anywhere in this project, and §26's "ATS: no exceptions in
+	 release" is satisfied by construction rather than by a pre-release checklist
+	 item somebody has to remember.
+	-->
+
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+</dict>
+</plist>

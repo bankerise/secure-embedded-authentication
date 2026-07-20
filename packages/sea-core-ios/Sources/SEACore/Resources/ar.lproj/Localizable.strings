@@ -1,0 +1,18 @@
+/* SEACore — العربية */
+
+"sea.loading" = "جارٍ التحميل…";
+"sea.action.retry" = "إعادة المحاولة";
+"sea.action.close" = "إغلاق";
+"sea.capture.warning" = "تم اكتشاف تسجيل للشاشة. لحمايتك، يتم إخفاء هذا المحتوى أثناء التسجيل.";
+
+"sea.error.network.title" = "مشكلة في الاتصال";
+"sea.error.network.message" = "تعذر الوصول إلى صفحة تسجيل الدخول. يرجى التحقق من اتصالك والمحاولة مرة أخرى.";
+
+"sea.error.timeout.title" = "استغرقت العملية وقتًا طويلاً";
+"sea.error.timeout.message" = "انتهت مهلة محاولة تسجيل الدخول. يرجى المحاولة مرة أخرى.";
+
+"sea.error.server.title" = "الخدمة غير متاحة";
+"sea.error.server.message" = "خدمة تسجيل الدخول غير متاحة مؤقتًا حاليًا. يرجى المحاولة مرة أخرى بعد قليل.";
+
+"sea.error.generic.title" = "حدث خطأ ما";
+"sea.error.generic.message" = "تعذر إكمال تسجيل الدخول. يرجى المحاولة مرة أخرى.";

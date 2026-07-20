@@ -1,0 +1,58 @@
+# Local Keycloak dev stack for SEA, TLS-terminated.
+#
+# WHY THE TLS PROXY EXISTS — this is not incidental plumbing:
+# SEA's authorize-URL validator (spec §6.2, contract §5) requires scheme
+# `https` and a standard port, with NO debug bypass (§8.2 forbids one).
+# A plain http://localhost:8080 Keycloak would be rejected by our own core.
+# The correct answer is to make local dev speak real HTTPS, NOT to weaken
+# the validator for debug builds. So nginx terminates TLS on :443 with an
+# mkcert-issued certificate and Keycloak sits behind it, unexposed.
+#
+# Net effect: the validator runs in its PRODUCTION configuration locally.
+#
+# Keycloak is deliberately NOT published to a host port. The only way in is
+# through TLS — which is also true in every real deployment.
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.0
+    container_name: sea-keycloak
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin        # DEV ONLY
+      KC_DB: dev-file
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_PORT: "8080"
+      KC_HEALTH_ENABLED: "true"
+      # Behind the nginx terminator: trust the forwarded proto/host so
+      # Keycloak mints https:// issuer and redirect URLs, not http://.
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME: https://localhost
+      KC_HOSTNAME_STRICT: "false"
+      KC_LOG_LEVEL: info
+    volumes:
+      - ./realm:/opt/keycloak/data/import:ro
+    command: ["start-dev", "--import-realm"]
+    networks: [sea]
+
+  tls:
+    image: nginx:1.27-alpine
+    container_name: sea-keycloak-tls
+    depends_on: [keycloak]
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx/keycloak.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./tls:/etc/nginx/tls:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-check-certificate", "-q", "-O", "-",
+             "https://localhost/realms/bankerise-mobile/.well-known/openid-configuration"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks: [sea]
+
+networks:
+  sea:
+    driver: bridge
