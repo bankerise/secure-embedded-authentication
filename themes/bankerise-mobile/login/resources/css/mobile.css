@@ -1,0 +1,591 @@
+/* ==========================================================================
+   Bankerise SEA — mobile login theme (spec §18.2)
+   Rendered inside a hardened iOS WKWebView with no browser chrome: this
+   stylesheet IS the entire visual surface. Single column, native-app feel.
+   All brand tokens are centralized below as --sea-* custom properties so the
+   palette is swappable in one place. No web fonts / external requests — the
+   WebView is app-bound-domain restricted.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Brand tokens (light = default)
+   Palette: confident fintech blue on neutral off-white, tuned for WCAG 2.1 AA
+   (body text >=4.5:1, large text / UI components >=3:1 against their
+   background). See report for the exact contrast ratios computed.
+   -------------------------------------------------------------------------- */
+:root {
+  /* Colors — surfaces */
+  --sea-color-bg: #f5f7fa;
+  --sea-color-surface: #ffffff;
+  --sea-color-border: #d7dde5;
+
+  /* Colors — text */
+  --sea-color-text: #101828;
+  --sea-color-text-muted: #475467;
+  --sea-color-text-on-primary: #ffffff;
+
+  /* Colors — brand / action */
+  --sea-color-primary: #1348d6;
+  --sea-color-primary-hover: #0f3ab0;
+  --sea-color-primary-active: #0c2e8c;
+  --sea-color-focus-ring: #1348d6;
+
+  /* Colors — feedback */
+  --sea-color-danger: #b3261e;
+  --sea-color-danger-bg: #fdecea;
+  --sea-color-danger-border: #f3b7b2;
+  --sea-color-success: #0f7a3d;
+  --sea-color-success-bg: #e9f7ee;
+  --sea-color-warning: #8a5a00;
+  --sea-color-warning-bg: #fdf3dc;
+  --sea-color-info: #0b5cab;
+  --sea-color-info-bg: #e8f1fb;
+
+  /* Colors — placeholder / disabled */
+  --sea-color-placeholder: #7c8798;
+  --sea-color-disabled-bg: #eef1f5;
+  --sea-color-disabled-text: #98a2b3;
+
+  /* Spacing scale (rem, so it survives 200% font scale) */
+  --sea-space-1: 0.25rem;
+  --sea-space-2: 0.5rem;
+  --sea-space-3: 0.75rem;
+  --sea-space-4: 1rem;
+  --sea-space-5: 1.5rem;
+  --sea-space-6: 2rem;
+  --sea-space-7: 3rem;
+  --sea-space-8: 4rem;
+
+  /* Radius */
+  --sea-radius-sm: 0.5rem;
+  --sea-radius-md: 0.875rem;
+  --sea-radius-lg: 1.25rem;
+  --sea-radius-full: 999px;
+
+  /* Typography */
+  --sea-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --sea-font-size-sm: 0.8125rem;
+  --sea-font-size-body: 1rem;
+  --sea-font-size-input: 1.0625rem;
+  --sea-font-size-title: 1.5rem;
+  --sea-font-size-brand: 1.25rem;
+  --sea-line-height: 1.45;
+  --sea-font-weight-regular: 400;
+  --sea-font-weight-medium: 500;
+  --sea-font-weight-semibold: 600;
+  --sea-font-weight-bold: 700;
+
+  /* Sizing */
+  --sea-tap-target-min: 2.75rem; /* 44px */
+  --sea-input-height: 3.25rem;
+  --sea-max-content-width: 26rem;
+
+  /* Motion */
+  --sea-transition-fast: 120ms ease;
+  --sea-transition-medium: 200ms ease;
+
+  /* Safe-area insets (fallback 0 on platforms without env()) */
+  --sea-safe-top: env(safe-area-inset-top, 0px);
+  --sea-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --sea-safe-left: env(safe-area-inset-left, 0px);
+  --sea-safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* --------------------------------------------------------------------------
+   2. Dark mode — device/app appearance (primary mechanism per spec)
+   -------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sea-color-bg: #0b0e14;
+    --sea-color-surface: #151a24;
+    --sea-color-border: #2a3140;
+
+    --sea-color-text: #eef1f6;
+    --sea-color-text-muted: #a3adbe;
+    --sea-color-text-on-primary: #ffffff;
+
+    --sea-color-primary: #5b8bf0;
+    --sea-color-primary-hover: #7ba0f3;
+    --sea-color-primary-active: #4271db;
+    --sea-color-focus-ring: #7ba0f3;
+
+    --sea-color-danger: #ff6b64;
+    --sea-color-danger-bg: #331414;
+    --sea-color-danger-border: #6b2b27;
+    --sea-color-success: #4bd07f;
+    --sea-color-success-bg: #10281a;
+    --sea-color-warning: #e8b04b;
+    --sea-color-warning-bg: #2e2408;
+    --sea-color-info: #6fb0f2;
+    --sea-color-info-bg: #10233a;
+
+    --sea-color-placeholder: #7c8798;
+    --sea-color-disabled-bg: #1c222d;
+    --sea-color-disabled-text: #5c6675;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. Explicit theme override (theme_dark / theme query param)
+   These win over the media query in both directions since they are more
+   specific selectors declared after it in source order.
+   -------------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --sea-color-bg: #0b0e14;
+  --sea-color-surface: #151a24;
+  --sea-color-border: #2a3140;
+
+  --sea-color-text: #eef1f6;
+  --sea-color-text-muted: #a3adbe;
+  --sea-color-text-on-primary: #ffffff;
+
+  --sea-color-primary: #5b8bf0;
+  --sea-color-primary-hover: #7ba0f3;
+  --sea-color-primary-active: #4271db;
+  --sea-color-focus-ring: #7ba0f3;
+
+  --sea-color-danger: #ff6b64;
+  --sea-color-danger-bg: #331414;
+  --sea-color-danger-border: #6b2b27;
+  --sea-color-success: #4bd07f;
+  --sea-color-success-bg: #10281a;
+  --sea-color-warning: #e8b04b;
+  --sea-color-warning-bg: #2e2408;
+  --sea-color-info: #6fb0f2;
+  --sea-color-info-bg: #10233a;
+
+  --sea-color-placeholder: #7c8798;
+  --sea-color-disabled-bg: #1c222d;
+  --sea-color-disabled-text: #5c6675;
+}
+
+:root[data-theme="light"] {
+  --sea-color-bg: #f5f7fa;
+  --sea-color-surface: #ffffff;
+  --sea-color-border: #d7dde5;
+
+  --sea-color-text: #101828;
+  --sea-color-text-muted: #475467;
+  --sea-color-text-on-primary: #ffffff;
+
+  --sea-color-primary: #1348d6;
+  --sea-color-primary-hover: #0f3ab0;
+  --sea-color-primary-active: #0c2e8c;
+  --sea-color-focus-ring: #1348d6;
+
+  --sea-color-danger: #b3261e;
+  --sea-color-danger-bg: #fdecea;
+  --sea-color-danger-border: #f3b7b2;
+  --sea-color-success: #0f7a3d;
+  --sea-color-success-bg: #e9f7ee;
+  --sea-color-warning: #8a5a00;
+  --sea-color-warning-bg: #fdf3dc;
+  --sea-color-info: #0b5cab;
+  --sea-color-info-bg: #e8f1fb;
+
+  --sea-color-placeholder: #7c8798;
+  --sea-color-disabled-bg: #eef1f5;
+  --sea-color-disabled-text: #98a2b3;
+}
+
+/* --------------------------------------------------------------------------
+   4. Reset / base
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--sea-color-bg);
+  color: var(--sea-color-text);
+  font-family: var(--sea-font-family);
+  font-size: var(--sea-font-size-body);
+  line-height: var(--sea-line-height);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: var(--sea-color-primary);
+}
+
+/* --------------------------------------------------------------------------
+   5. Page shell — single column, safe-area aware
+   -------------------------------------------------------------------------- */
+.sea-screen {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding-top: calc(var(--sea-safe-top) + var(--sea-space-6));
+  padding-bottom: calc(var(--sea-safe-bottom) + var(--sea-space-5));
+  /* NOTE: safe-area-inset-left/right are physical (tied to the device
+     edge/notch), not logical — they must NOT flip under dir="rtl". The
+     visual breathing-room (--sea-space-5) is symmetric, so using physical
+     left/right here is correct in both directions; all *content* alignment
+     (labels, text, form fields) still uses logical properties below so it
+     mirrors correctly for Arabic. */
+  padding-left: calc(var(--sea-safe-left) + var(--sea-space-5));
+  padding-right: calc(var(--sea-safe-right) + var(--sea-space-5));
+}
+
+.sea-card {
+  width: 100%;
+  max-width: var(--sea-max-content-width);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   6. Brand header (logo / wordmark)
+   -------------------------------------------------------------------------- */
+.sea-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: var(--sea-space-6);
+}
+
+.sea-brand__logo {
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: var(--sea-space-3);
+}
+
+.sea-brand__logo svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.sea-brand__wordmark {
+  font-size: var(--sea-font-size-brand);
+  font-weight: var(--sea-font-weight-semibold);
+  letter-spacing: -0.01em;
+  color: var(--sea-color-text);
+}
+
+/* --------------------------------------------------------------------------
+   7. Title / subtitle
+   -------------------------------------------------------------------------- */
+.sea-title {
+  font-size: var(--sea-font-size-title);
+  font-weight: var(--sea-font-weight-bold);
+  color: var(--sea-color-text);
+  text-align: start;
+  margin: 0 0 var(--sea-space-2);
+}
+
+.sea-subtitle {
+  font-size: var(--sea-font-size-body);
+  color: var(--sea-color-text-muted);
+  text-align: start;
+  margin: 0 0 var(--sea-space-6);
+}
+
+/* --------------------------------------------------------------------------
+   8. Passkey CTA slot (DEFERRED — placeholder only, see login.ftl comment)
+   -------------------------------------------------------------------------- */
+.sea-passkey-cta {
+  width: 100%;
+  min-height: var(--sea-tap-target-min);
+  margin-bottom: var(--sea-space-5);
+  padding: var(--sea-space-3) var(--sea-space-4);
+  border-radius: var(--sea-radius-md);
+  border: 1px dashed var(--sea-color-border);
+  background: var(--sea-color-disabled-bg);
+  color: var(--sea-color-disabled-text);
+  font-size: var(--sea-font-size-body);
+  font-weight: var(--sea-font-weight-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sea-space-2);
+  cursor: not-allowed;
+}
+
+.sea-passkey-cta svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+}
+
+.sea-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--sea-space-3);
+  margin: 0 0 var(--sea-space-5);
+  color: var(--sea-color-text-muted);
+  font-size: var(--sea-font-size-sm);
+}
+
+.sea-divider::before,
+.sea-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--sea-color-border);
+}
+
+/* --------------------------------------------------------------------------
+   9. Alerts / messages (role=alert, aria-live handled in markup)
+   -------------------------------------------------------------------------- */
+.sea-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sea-space-2);
+  padding: var(--sea-space-3) var(--sea-space-4);
+  border-radius: var(--sea-radius-sm);
+  border: 1px solid transparent;
+  font-size: var(--sea-font-size-body);
+  margin-bottom: var(--sea-space-5);
+}
+
+.sea-alert.pf-m-danger {
+  background: var(--sea-color-danger-bg);
+  border-color: var(--sea-color-danger-border);
+  color: var(--sea-color-danger);
+}
+
+.sea-alert.pf-m-success {
+  background: var(--sea-color-success-bg);
+  color: var(--sea-color-success);
+}
+
+.sea-alert.pf-m-warning {
+  background: var(--sea-color-warning-bg);
+  color: var(--sea-color-warning);
+}
+
+.sea-alert.pf-m-info {
+  background: var(--sea-color-info-bg);
+  color: var(--sea-color-info);
+}
+
+.sea-alert__icon {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.0625rem;
+}
+
+/* --------------------------------------------------------------------------
+   10. Form
+   -------------------------------------------------------------------------- */
+.sea-form-group {
+  margin-bottom: var(--sea-space-5);
+}
+
+.sea-label {
+  display: block;
+  font-size: var(--sea-font-size-sm);
+  font-weight: var(--sea-font-weight-medium);
+  color: var(--sea-color-text);
+  margin-bottom: var(--sea-space-2);
+  text-align: start;
+}
+
+.sea-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.sea-input {
+  width: 100%;
+  min-height: var(--sea-input-height);
+  padding-inline: var(--sea-space-4);
+  padding-block: var(--sea-space-3);
+  font-size: var(--sea-font-size-input);
+  font-family: inherit;
+  color: var(--sea-color-text);
+  background: var(--sea-color-surface);
+  border: 1.5px solid var(--sea-color-border);
+  border-radius: var(--sea-radius-md);
+  transition: border-color var(--sea-transition-fast), box-shadow var(--sea-transition-fast);
+  text-align: start;
+}
+
+.sea-input::placeholder {
+  color: var(--sea-color-placeholder);
+}
+
+.sea-input[aria-invalid="true"] {
+  border-color: var(--sea-color-danger);
+}
+
+.sea-input-wrap:has(.sea-input) .sea-input {
+  padding-inline-end: var(--sea-space-4);
+}
+
+.sea-input-wrap.has-toggle .sea-input {
+  padding-inline-end: 3rem;
+}
+
+.sea-password-toggle {
+  position: absolute;
+  inset-inline-end: var(--sea-space-1);
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--sea-tap-target-min);
+  height: var(--sea-tap-target-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--sea-radius-sm);
+  color: var(--sea-color-text-muted);
+  cursor: pointer;
+}
+
+.sea-password-toggle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.sea-error-text {
+  display: block;
+  margin-top: var(--sea-space-2);
+  font-size: var(--sea-font-size-sm);
+  color: var(--sea-color-danger);
+  text-align: start;
+}
+
+.sea-form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sea-space-3);
+  margin-bottom: var(--sea-space-5);
+  flex-wrap: wrap;
+}
+
+.sea-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--sea-space-2);
+  font-size: var(--sea-font-size-sm);
+  color: var(--sea-color-text-muted);
+  min-height: var(--sea-tap-target-min);
+}
+
+.sea-checkbox-label input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--sea-color-primary);
+}
+
+.sea-link {
+  font-size: var(--sea-font-size-sm);
+  font-weight: var(--sea-font-weight-medium);
+  text-decoration: none;
+}
+
+.sea-link:hover {
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   11. Buttons
+   -------------------------------------------------------------------------- */
+.sea-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--sea-tap-target-min);
+  padding: var(--sea-space-3) var(--sea-space-5);
+  border-radius: var(--sea-radius-md);
+  border: none;
+  font-size: var(--sea-font-size-input);
+  font-weight: var(--sea-font-weight-semibold);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color var(--sea-transition-fast), transform var(--sea-transition-fast);
+}
+
+.sea-button-primary {
+  background: var(--sea-color-primary);
+  color: var(--sea-color-text-on-primary);
+}
+
+.sea-button-primary:hover {
+  background: var(--sea-color-primary-hover);
+}
+
+.sea-button-primary:active {
+  background: var(--sea-color-primary-active);
+}
+
+.sea-button:disabled {
+  background: var(--sea-color-disabled-bg);
+  color: var(--sea-color-disabled-text);
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   12. Footer link area
+   -------------------------------------------------------------------------- */
+.sea-footer {
+  margin-top: auto;
+  padding-top: var(--sea-space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sea-space-3);
+  text-align: center;
+  font-size: var(--sea-font-size-sm);
+  color: var(--sea-color-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   13. Focus visibility (WCAG 2.1 AA — 2.4.7)
+   -------------------------------------------------------------------------- */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--sea-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.sea-input:focus-visible {
+  outline: none;
+  border-color: var(--sea-color-focus-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sea-color-focus-ring) 35%, transparent);
+}
+
+/* --------------------------------------------------------------------------
+   14. Reduced motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15. RTL — logical properties above already mirror automatically for
+   margin/padding/inset/text-align. Anything that needs an explicit flip
+   (icon mirroring) goes here.
+   -------------------------------------------------------------------------- */
+html[dir="rtl"] .sea-brand__logo svg,
+html[dir="rtl"] .sea-alert__icon svg {
+  transform: none; /* logo/alert icons are symmetric; no mirroring needed */
+}

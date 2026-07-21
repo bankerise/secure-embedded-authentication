@@ -32,6 +32,10 @@ services:
       KC_LOG_LEVEL: info
     volumes:
       - ./realm:/opt/keycloak/data/import:ro
+      # The bankerise-mobile login theme (§18.2), a shipped SEA v1 deliverable
+      # kept at repo root. Mounted read-only; start-dev disables theme caching
+      # so edits reflect on the next WebView reload with no container restart.
+      - ../themes:/opt/keycloak/themes:ro
     command: ["start-dev", "--import-realm"]
     networks: [sea]
 

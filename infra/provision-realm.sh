@@ -38,7 +38,8 @@ fi
   -s ssoSessionMaxLifespan=7776000 \
   -s internationalizationEnabled=true \
   -s 'supportedLocales=["en","fr","ar"]' \
-  -s defaultLocale=en
+  -s defaultLocale=en \
+  -s loginTheme=bankerise-mobile
 
 # --- Confidential client (§12.1) — the production shape. -------------------
 # The secret belongs to the API Gateway alone (§6). Nothing on the device
