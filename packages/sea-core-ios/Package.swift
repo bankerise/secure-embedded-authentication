@@ -24,7 +24,10 @@ let package = Package(
         ),
         .testTarget(
             name: "SEACoreTests",
-            dependencies: ["SEACore"]
+            dependencies: ["SEACore"],
+            resources: [
+                .process("Fixtures")
+            ]
         )
     ]
 )

@@ -42,7 +42,6 @@ thread. Every public entry point begins with `SEAThread.assertMain()`, which is
 ```swift
 public struct SEAConfig {
     public let authorizeURL: URL          // gateway-issued (§6.1)
-    public let callbackScheme: String     // e.g. "bankerise-auth"
     public let allowedDomains: [String]   // narrowing only (§7.1)
     public let presentation: SEAPresentation
     public let appearance: SEAAppearance
@@ -54,6 +53,11 @@ public enum SEAPresentation { case sheet, fullscreen }   // sheet is default
 
 Init is memberwise-public with defaults for `presentation` (.sheet),
 `appearance` (.default), `timeoutMs` (120_000), `allowedDomains` ([]).
+
+Note: `SEAConfig` does **not** carry a `callbackScheme`. The callback scheme
+is a single app-wide value owned by `SEAEnvironment` (§3.3) — it is not
+something a per-session caller can vary, so it is not part of this
+per-session config type.
 
 ### 3.2 `SEAAppearance` (§18.1 — colors & text only)
 
@@ -72,20 +76,69 @@ public struct SEAAppearance {
 
 No layout injection. Appearance never touches web content (§13).
 
-### 3.3 `SEAEnvironment` — compiled security config (§7.1, §6.2)
+### 3.3 `SEAEnvironment` — host-app-supplied security config (§7.1, §6.2)
 
 ```swift
 public struct SEAEnvironment {
-    public let authDomains: Set<String>       // COMPILED allowlist
-    public let callbackScheme: String         // COMPILED
-    public static let current: SEAEnvironment // build-config selected
+    public let authDomains: Set<String>       // loaded from the host app's bundle
+    public let callbackScheme: String         // loaded from the host app's bundle
+    public static let current: SEAEnvironment // resolved once, on first access
 }
 ```
 
 The JS/host-supplied `allowedDomains` is **intersected** with `authDomains`.
-Host input can narrow, never widen. An empty host list means "use the compiled
-set unchanged". A host list disjoint from the compiled set yields an empty
+Host input can narrow, never widen. An empty host list means "use the loaded
+set unchanged". A host list disjoint from the loaded set yields an empty
 effective allowlist → every navigation is denied (fail closed, not fail open).
+
+SEACore is a single shared binary embedded by many different bank apps, each
+with its own callback URL scheme and auth-domain allowlist. Those values are
+**not compiled into SEACore** (that would require a different SEACore build
+per integrating app). Instead, `SEAEnvironment.current` loads them at
+runtime, once, from a dedicated `SEASecurityConfig.plist` bundled into the
+**host application's own target** — read from `Bundle.main` (the app that
+embeds SEACore), never from SEACore's own SPM resource bundle. This keeps
+the callback scheme / domain allowlist just as native-trusted and
+untouchable from JS/React Native as a compiled value would have been, while
+letting one SEACore binary correctly serve many different apps: each
+integrating app ships its own plist at *application*-packaging time, not at
+SEACore's own *library*-build time. A dev/staging/prod split, if a given
+integrating app wants one, is achieved by that app swapping which plist file
+its build configuration/target includes — entirely outside SEACore's
+concern; SEACore itself has no compile-time environment-flavor concept.
+
+#### `SEASecurityConfig.plist` schema
+
+A flat two-key dictionary, bundled as a resource in the **host app's own
+target** (e.g. `apps/demo-ios/Sources/SEASecurityConfig.plist` for the demo
+harness — never inside `sea-core-ios` itself):
+
+```xml
+<key>CallbackScheme</key>
+<string>bkrmob</string>
+<key>AuthDomains</key>
+<array>
+    <string>platform-keycloak.pres.proxym-it.net</string>
+</array>
+```
+
+| Key | Type | Notes |
+|---|---|---|
+| `CallbackScheme` | `String` | The app's single registered custom URL scheme (one `CFBundleURLTypes` entry). Must be non-empty. |
+| `AuthDomains` | `Array<String>` | The allowlist §7.1 narrows against. Must be non-empty. |
+
+**Fail closed.** Any problem loading or parsing the plist — missing file,
+unreadable, malformed dictionary, missing/wrong-typed `CallbackScheme`,
+missing/empty `AuthDomains` — resolves `SEAEnvironment.current` to
+`SEAEnvironment(authDomains: [], callbackScheme: "")`. An empty
+`authDomains` means `effectiveAllowlist` can never contain anything (every
+host check fails); an empty-string `callbackScheme` can never equal a real
+URL's `.scheme`, so callback capture can never trigger either — this
+mirrors the "any ambiguity resolves to failure" principle used throughout
+the validator/policy. The failure path also raises `assertionFailure`, a
+loud DEBUG-time signal to the integrating developer that their bundle is
+missing or misconfigured; it is a no-op in Release, so a shipped app never
+crashes over this.
 
 ### 3.4 `SEACallbackParams` (§6.3)
 

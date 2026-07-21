@@ -26,9 +26,19 @@ struct ConfigView: View {
                 }
 
                 Section("SEAConfig") {
-                    TextField("Callback scheme", text: $settings.callbackScheme)
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
+                    // Not editable: the callback scheme is no longer a
+                    // per-session SEAConfig knob — it's owned by
+                    // SEAEnvironment, loaded once from this app's bundled
+                    // SEASecurityConfig.plist (api-contract-ios-v1.md §3.3).
+                    // Shown here read-only so the tester can still see
+                    // what's actually enforced.
+                    HStack {
+                        Text("Callback scheme")
+                        Spacer()
+                        Text("\(SEAEnvironment.current.callbackScheme) (from SEASecurityConfig.plist)")
+                            .foregroundColor(.secondary)
+                            .font(.footnote)
+                    }
                     TextField("Allowed domains (comma list)", text: $settings.allowedDomains)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)

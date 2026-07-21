@@ -14,7 +14,7 @@ final class SEAAuthViewControllerTests: XCTestCase {
     }
 
     private func makeConfig() -> SEAConfig {
-        SEAConfig(authorizeURL: URL(string: "https://auth.bank.com/auth")!, callbackScheme: "bankerise-auth")
+        SEAConfig(authorizeURL: URL(string: "https://auth.bank.com/auth")!)
     }
 
     private func makeEnvironment() -> SEAEnvironment {

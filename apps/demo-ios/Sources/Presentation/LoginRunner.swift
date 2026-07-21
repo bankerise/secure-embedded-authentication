@@ -54,7 +54,6 @@ final class LoginRunner: ObservableObject {
 
         let config = SEAConfig(
             authorizeURL: startResult.redirectURL,
-            callbackScheme: settings.callbackScheme,
             allowedDomains: settings.allowedDomainsArray,
             presentation: settings.presentation,
             appearance: .default,

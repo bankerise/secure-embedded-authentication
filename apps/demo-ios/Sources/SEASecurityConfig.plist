@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	SEACore's host-app-supplied security config (api-contract-ios-v1.md §3.3).
+	Bundled into THIS app target (SEADemo), not into sea-core-ios — SEACore
+	itself has no compile-time environment-flavor concept anymore; every
+	integrating app now ships its own copy of this file.
+
+	This demo/test harness app is permanently a test harness, so listing
+	both the local-infra Keycloak domains (auth.bank.local, localhost) and
+	the live showcase Keycloak domain (platform-keycloak.pres.proxym-it.net)
+	together in one list is correct for it specifically — there is no
+	release build of this app that should ever ship to a real user.
+
+	A REAL bank's production app would NOT do this: it would bundle only
+	its own real domain(s) here. If it wants a dev/staging/prod split, that
+	is achieved by swapping which SEASecurityConfig.plist file is included
+	per Xcode build configuration/target — entirely outside SEACore's
+	concern now that these values are no longer compiled into the library.
+	-->
+	<key>CallbackScheme</key>
+	<string>bkrmob</string>
+	<key>AuthDomains</key>
+	<array>
+		<string>auth.bank.local</string>
+		<string>localhost</string>
+		<string>platform-keycloak.pres.proxym-it.net</string>
+	</array>
+</dict>
+</plist>

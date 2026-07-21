@@ -26,13 +26,16 @@
 	 App-Bound Domains restriction (limitsNavigationsToAppBoundDomains = true, enforced
 	 inside SEACore). "auth.bank.local" is the demo/dev auth domain used by the local
 	 infra Keycloak realm; "localhost" is included so the fuzz/mock corpus and local
-	 dev backends can be exercised on-device. Production consumers replace this list
-	 with their real auth domain(s) only.
+	 dev backends can be exercised on-device; "platform-keycloak.pres.proxym-it.net"
+	 is the live Keycloak host behind the real showcase gateway used for integration
+	 testing. Production consumers replace this list with their real auth domain(s)
+	 only.
 	-->
 	<key>WKAppBoundDomains</key>
 	<array>
 		<string>auth.bank.local</string>
 		<string>localhost</string>
+		<string>platform-keycloak.pres.proxym-it.net</string>
 	</array>
 
 	<!--
@@ -40,7 +43,8 @@
 	 callbackScheme and registered here so iOS routes it back to this app if the
 	 WebView ever let it escape to the OS (it shouldn't — SEACore intercepts
 	 in-process before dispatch). Registration here is a defense-in-depth / OS-level
-	 requirement, not the primary capture mechanism.
+	 requirement, not the primary capture mechanism. "bkrmob" is the real callback
+	 scheme used by the live showcase gateway/Keycloak environment.
 	-->
 	<key>CFBundleURLTypes</key>
 	<array>
@@ -51,7 +55,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>bankerise-auth</string>
+				<string>bkrmob</string>
 			</array>
 		</dict>
 	</array>

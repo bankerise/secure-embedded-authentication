@@ -17,11 +17,8 @@ public struct SEAConfig {
     /// before anything loads.
     public let authorizeURL: URL
 
-    /// Custom scheme the callback redirect uses, e.g. "bankerise-auth".
-    public let callbackScheme: String
-
-    /// Host-supplied allowlist. Narrowing only (§7.1) — intersected with the
-    /// compiled `SEAEnvironment.current.authDomains`, never widening it.
+    /// Host-supplied allowlist. Narrowing only (§7.1) — intersected with
+    /// `SEAEnvironment.current.authDomains`, never widening it.
     public let allowedDomains: [String]
 
     public let presentation: SEAPresentation
@@ -35,7 +32,6 @@ public struct SEAConfig {
 
     public init(
         authorizeURL: URL,
-        callbackScheme: String,
         allowedDomains: [String] = [],
         presentation: SEAPresentation = .sheet,
         appearance: SEAAppearance = .default,
@@ -43,7 +39,6 @@ public struct SEAConfig {
         capturePolicy: SEACapturePolicy = .warn
     ) {
         self.authorizeURL = authorizeURL
-        self.callbackScheme = callbackScheme
         self.allowedDomains = allowedDomains
         self.presentation = presentation
         self.appearance = appearance

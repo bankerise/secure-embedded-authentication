@@ -5,14 +5,14 @@ import SEACore
 ///
 /// This is harness state only — it has no bearing on SEACore's own security
 /// posture. `allowedDomains` here is the *host-supplied narrowing list* that
-/// SEACore intersects with its compiled `SEAEnvironment.current.authDomains`
-/// (api-contract-ios-v1.md §3.3) — it can never widen what the core accepts.
+/// SEACore intersects with `SEAEnvironment.current.authDomains` (loaded from
+/// this app's own bundled `SEASecurityConfig.plist` — api-contract-ios-v1.md
+/// §3.3) — it can never widen what the core accepts.
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
     private enum Keys {
         static let gatewayBaseURL = "sea.demo.gatewayBaseURL"
-        static let callbackScheme = "sea.demo.callbackScheme"
         static let allowedDomains = "sea.demo.allowedDomains"
         static let presentation = "sea.demo.presentation"
         static let timeoutMs = "sea.demo.timeoutMs"
@@ -23,10 +23,9 @@ final class AppSettings: ObservableObject {
     private enum Defaults {
         // Our own GatewayClient <-> local backend traffic. Not passed to SEACore.
         static let gatewayBaseURL = "http://localhost:8080"
-        static let callbackScheme = "bankerise-auth"
         // Narrowing list handed to SEACore; also reused by the fuzz screen so
         // both surfaces exercise the same effective allowlist.
-        static let allowedDomains = "auth.bank.local,localhost"
+        static let allowedDomains = "auth.bank.local,localhost,platform-keycloak.pres.proxym-it.net"
         static let presentation = "sheet"
         static let timeoutMs = 120_000
         static let useMockGateway = true
@@ -36,7 +35,7 @@ final class AppSettings: ObservableObject {
         // the mock: it lets you exercise the WebView surface, but it does not
         // and should not bypass the core's own validation.
         // A COMPLETE, working authorize URL for the local infra/ Keycloak:
-        //   - host localhost (TLS-terminated; in the compiled DEBUG allowlist)
+        //   - host localhost (TLS-terminated; in this app's SEASecurityConfig.plist allowlist)
         //   - realm bankerise-mobile, client sea-dev-public (the dev-only
         //     public client — see infra/README.md)
         //   - PKCE S256 params, which sea-dev-public enforces. Omitting them
@@ -57,9 +56,6 @@ final class AppSettings: ObservableObject {
 
     @Published var gatewayBaseURL: String {
         didSet { defaults.set(gatewayBaseURL, forKey: Keys.gatewayBaseURL) }
-    }
-    @Published var callbackScheme: String {
-        didSet { defaults.set(callbackScheme, forKey: Keys.callbackScheme) }
     }
     @Published var allowedDomains: String {
         didSet { defaults.set(allowedDomains, forKey: Keys.allowedDomains) }
@@ -88,7 +84,6 @@ final class AppSettings: ObservableObject {
 
     private init() {
         gatewayBaseURL = defaults.string(forKey: Keys.gatewayBaseURL) ?? Defaults.gatewayBaseURL
-        callbackScheme = defaults.string(forKey: Keys.callbackScheme) ?? Defaults.callbackScheme
         allowedDomains = defaults.string(forKey: Keys.allowedDomains) ?? Defaults.allowedDomains
         let presentationRaw = defaults.string(forKey: Keys.presentation) ?? Defaults.presentation
         presentation = presentationRaw == "fullscreen" ? .fullscreen : .sheet

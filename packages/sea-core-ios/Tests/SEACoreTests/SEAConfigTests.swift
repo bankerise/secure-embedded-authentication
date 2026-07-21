@@ -4,8 +4,7 @@ import XCTest
 final class SEAConfigTests: XCTestCase {
     func test_defaults_matchContract() {
         let config = SEAConfig(
-            authorizeURL: URL(string: "https://auth.bank.com/auth")!,
-            callbackScheme: "bankerise-auth"
+            authorizeURL: URL(string: "https://auth.bank.com/auth")!
         )
         XCTAssertEqual(config.allowedDomains, [])
         if case .sheet = config.presentation {} else { XCTFail("default presentation should be .sheet") }

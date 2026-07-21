@@ -2,7 +2,10 @@ import Foundation
 
 /// Real implementation of the §6.1 two-hop gateway start sequence:
 ///
-///   1. POST {baseURL}/authorization/start  -> { redirect, authMode, provider }
+///   1. GET {baseURL}/authorization  -> { redirect, provider }
+///          (no request body; `authMode` is absent from the response and
+///          defaults to "EMBEDDED" per §21 — see `startAuthorization`)
+///          Headers: Accept, Accept-Language, X-App-Version-Key, X-Device-ID
 ///   2. GET  {redirect}                     -> { redirectUrl, provider }
 ///          + Set-Cookie: SESSION (pre-auth), landing in the NATIVE cookie jar
 ///
@@ -37,38 +40,42 @@ final class GatewayClient: AuthGateway {
     }
 
     func startAuthorization(locale: String?) async throws -> GatewayStartResult {
-        let startResponse = try await postAuthorizationStart(locale: locale)
+        let startResponse = try await getAuthorizationStart()
         let redirectResponse = try await getRedirect(startResponse.redirect)
 
         guard let finalURL = URL(string: redirectResponse.redirectUrl) else {
             throw GatewayError.malformedRedirectURL(redirectResponse.redirectUrl)
         }
 
+        // §21: authMode is absent from the real response entirely (not just
+        // null) -> absent means EMBEDDED.
         return GatewayStartResult(
             redirectURL: finalURL,
-            authMode: startResponse.authMode,
+            authMode: startResponse.authMode ?? "EMBEDDED",
             provider: redirectResponse.provider
         )
     }
 
     // MARK: - Hop 1
 
-    private struct StartRequestBody: Encodable {
-        let locale: String?
-    }
-
     private struct StartResponse: Decodable {
         let redirect: String
-        let authMode: String
+        let authMode: String?
         let provider: String
     }
 
-    private func postAuthorizationStart(locale: String?) async throws -> StartResponse {
-        let url = baseURL.appendingPathComponent("authorization/start")
+    /// DEMO/TEST-ONLY value for this specific showcase environment — not a
+    /// real secret, just an app-identity header the showcase gateway expects.
+    private static let demoAppVersionKey = "4ZvAEYVC2Xk3"
+
+    private func getAuthorizationStart() async throws -> StartResponse {
+        let url = baseURL.appendingPathComponent("authorization")
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(StartRequestBody(locale: locale))
+        request.httpMethod = "GET"
+        request.setValue("application/json, text/plain, */*", forHTTPHeaderField: "Accept")
+        request.setValue("en-US", forHTTPHeaderField: "Accept-Language")
+        request.setValue(Self.demoAppVersionKey, forHTTPHeaderField: "X-App-Version-Key")
+        request.setValue(DeviceIdentity.current, forHTTPHeaderField: "X-Device-ID")
 
         let (data, response) = try await session.data(for: request)
         try Self.assertSuccess(response, data: data)
@@ -76,7 +83,7 @@ final class GatewayClient: AuthGateway {
         do {
             return try JSONDecoder().decode(StartResponse.self, from: data)
         } catch {
-            throw GatewayError.decoding("hop 1 (/authorization/start): \(error)")
+            throw GatewayError.decoding("hop 1 (/authorization): \(error)")
         }
     }
 
