@@ -22,3 +22,16 @@ infra/data/
 
 # Local dev TLS material — generated per developer, never committed
 infra/tls/
+
+# Node / Yarn / React Native
+node_modules/
+yarn-error.log
+
+# React Native / CocoaPods build output
+apps/demo-rn/ios/Pods/
+apps/demo-rn/ios/build/
+apps/demo-rn/android/.gradle/
+apps/demo-rn/android/build/
+apps/demo-rn/android/app/build/
+packages/sea-react-native/lib/
+

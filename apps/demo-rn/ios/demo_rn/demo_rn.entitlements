@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	 Associated Domains (spec §8.3 / §10.2): mirrors apps/demo-ios's
+	 SEADemo.entitlements exactly. Without this, the WKWebView's WebAuthn
+	 ceremony (navigator.credentials.create/get) has no validated RP-ID
+	 binding and Keycloak's passkey-first CTA never surfaces the platform
+	 authenticator sheet — the login page falls back to username/password
+	 only, which is the bug this file fixes.
+
+	 `?mode=developer` (DEV/TEST HARNESS ONLY): fetches the
+	 apple-app-site-association file directly over HTTPS from the host
+	 (served by infra/ nginx) instead of via Apple's CDN, which cannot reach
+	 a local host like auth.bank.local. Also requires the "Associated
+	 Domains Development" toggle under Settings > Developer on the
+	 Simulator/device. A real bank app ships webcredentials:auth.bank.com
+	 with no ?mode=developer.
+	-->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>webcredentials:auth.bank.local?mode=developer</string>
+	</array>
+</dict>
+</plist>

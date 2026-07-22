@@ -15,13 +15,17 @@ The iOS API contract derived from it:
 
 ```
 packages/sea-core-ios/     Swift package — the audited security core
+packages/sea-react-native/ Fabric bridge wrapping sea-core-ios (spec §7)
 apps/demo-ios/             Native device-lab harness (§23.3)
+apps/demo-rn/               Bridge validation harness only (§4.4)
 infra/                     Keycloak dev stack + realm export
 docs/                      Spec + API contract
 ```
 
-`sea-core-android` and `sea-react-native` are not started yet — the build is
-core-first and iOS-first per §4.8.
+`sea-core-android` is not started yet — the build is core-first and
+iOS-first per §4.8. `sea-react-native` is scaffolded and validated against
+`sea-core-ios` in dev mode (local CocoaPods `:path`, §4.5); it has no
+Android side to bridge to until `sea-core-android` exists.
 
 ## Current status — Phase 1, iOS
 
@@ -46,7 +50,8 @@ silently succeeds in their place:
 | JS bridge | §14 | Not needed; default is no bridge |
 | Broker `EXTERNAL_TAB` | §12.4 | Phase 2 |
 | Kill-switch fallback | §21 | Phase 2 |
-| Android core, RN bridge | §4.2 | Not started |
+| Android core | §4.2 | Not started |
+| RN bridge (iOS side) | §4.2, §7 | Scaffolded, validated against `sea-core-ios` — see `infra/README.md` |
 
 Because attestation (§16) is the load-bearing compensating control for the §3
 RFC-8252 deviation, **this phase is not a security-reviewable configuration.**
@@ -62,10 +67,15 @@ docker compose -f infra/docker-compose.yml up -d
 cd packages/sea-core-ios
 xcodebuild test -scheme SEACore -destination 'platform=iOS Simulator,name=iPhone 17'
 
-# 3. Demo app
+# 3. Demo app (native)
 cd apps/demo-ios
 xcodegen generate
 open SEADemo.xcodeproj
+
+# 4. Demo app (React Native bridge) — see infra/README.md for detail
+nvm use && yarn install
+cd apps/demo-rn/ios && pod install && cd ..
+yarn ios
 ```
 
 See each directory's README for detail.
@@ -73,4 +83,5 @@ See each directory's README for detail.
 ## Prerequisites
 
 Xcode 26+, [XcodeGen](https://github.com/yonaskolb/XcodeGen)
-(`brew install xcodegen`), Docker.
+(`brew install xcodegen`), Docker, Node >=22.13 (see `.nvmrc`) + Yarn
+classic for `apps/demo-rn`.

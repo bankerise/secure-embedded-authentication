@@ -114,12 +114,22 @@ read-only into the `tls` container; nginx serves it directly and never
 proxies that path to Keycloak.
 
 ```json
-{"webcredentials":{"apps":["TEAMID.com.bankerise.sea.demo"]}}
+{"webcredentials":{"apps":["TEAMID.com.bankerise.sea.demo","TEAMID.com.bankerise.sea.demorn"]}}
 ```
 
-`TEAMID` is a placeholder. It must equal the app's `application-identifier`
-entitlement, i.e. `<Apple Development Team ID>.com.bankerise.sea.demo`
-exactly — a 10-character alphanumeric Team ID, not a display name. To find
+Both demo apps' bundle IDs must be listed — `apps/demo-ios` and
+`apps/demo-rn` each carry their own `com.apple.developer.associated-domains`
+entitlement (`apps/demo-ios/Sources/SEADemo.entitlements` and
+`apps/demo-rn/ios/demo_rn/demo_rn.entitlements`, both
+`webcredentials:auth.bank.local?mode=developer`) and Apple validates the
+AASA's `apps` array contains the exact `TeamID.BundleID` of whichever app is
+asking — a missing entry means WebAuthn silently fails to bind for that app
+and Keycloak falls back to password-only, with no error surfaced.
+
+`TEAMID` is a placeholder — the same value in both entries. It must equal
+the app's `application-identifier` entitlement, i.e.
+`<Apple Development Team ID>.com.bankerise.sea.demo` (or `.demorn`) exactly
+— a 10-character alphanumeric Team ID, not a display name. To find
 yours: Xcode → target → Signing & Capabilities → the value shown under
 "Team" resolves to a Team ID visible at
 https://developer.apple.com/account/#/membership, or run
@@ -376,6 +386,67 @@ The `code_challenge` is the RFC 7636 worked example, whose verifier is
 Phase 1 never exchanges the code — SEA's job ends at capture (§6.3) — so the
 verifier only matters once you have a gateway, or are testing an exchange by
 hand.
+
+`apps/demo-rn`'s `src/mockGateway.ts` hardcodes this exact same URL, so both
+demo apps exercise the identical realm/client/PKCE values.
+
+## `sea-react-native` bridge + `apps/demo-rn` (spec §4.2, §4.4, §7)
+
+Dev-mode setup, root of the repo:
+
+```bash
+nvm use            # Node >=22.13 — see .nvmrc; the RN 0.86 toolchain rejects Node 18
+yarn install        # Yarn classic v1 workspaces: packages/sea-react-native, apps/demo-rn
+cd apps/demo-rn/ios && pod install   # first run downloads RN prebuilt artifacts, ~3 min
+cd .. && yarn ios    # or: npx react-native start, then build/run demo_rn.xcworkspace in Xcode
+```
+
+Notes:
+
+- `packages/sea-core-ios/SEACore.podspec` is a thin wrapper (no logic
+  change) so CocoaPods can consume the same `Sources/SEACore` that
+  `apps/demo-ios` consumes via SwiftPM — see the `#if SWIFT_PACKAGE` seam in
+  `SEAStrings.swift` (SwiftPM's `Bundle.module` doesn't exist under
+  CocoaPods). `apps/demo-rn/ios/Podfile` pins it by local `:path`, per §4.5.
+- All bridge logic lives in `packages/sea-react-native/ios/SEABridgePresenter.swift`
+  (builds a `SEAConfig` from primitive props, calls `SEASession.start`) — the
+  generated Fabric view (`SeaReactNativeView.mm`) only marshals props/events,
+  per §7.4's bridge-purity rule.
+- `apps/demo-rn` bundles its own `SEASecurityConfig.plist`, `bkrmob`
+  URL-scheme registration, **and** `demo_rn.entitlements`
+  (`com.apple.developer.associated-domains`), identical in shape to
+  `apps/demo-ios`'s, so it talks to the same local realm/theme and gets the
+  same passkey-first CTA — see the AASA section above; both apps' bundle IDs
+  must be listed there or WebAuthn silently fails to bind for whichever one
+  is missing.
+- Metro needs `watchFolders`/`nodeModulesPaths` pointed at the workspace root
+  (see `apps/demo-rn/metro.config.js`) to see the hoisted root
+  `node_modules`, and `resolver.unstable_enablePackageExports` +
+  the `sea-react-native-source` condition name to resolve
+  `sea-react-native` straight to its TS source — no separate build step is
+  needed in dev.
+- `apps/demo-rn` has three tabs (hand-rolled, no navigation library):
+  Config (gateway URL / mock toggle / allowed domains / presentation /
+  timeout / start / purge web data), Result, and Telemetry — mirroring
+  `apps/demo-ios`'s ConfigView/ResultsView/TelemetryConsoleView. The Fuzz
+  view is intentionally not ported: it drives `SEACore`'s internal
+  Swift-only fuzz harness directly and isn't part of the bridge surface
+  `sea-react-native` exposes. Settings are in-memory only (no
+  AsyncStorage-equivalent dependency), unlike `apps/demo-ios`'s persisted
+  `UserDefaults`.
+- Telemetry (§20) and purge-web-data (§11.3) cross the bridge via a small
+  `SeaTelemetryEmitter` native module
+  (`packages/sea-react-native/ios/SeaTelemetryEmitter.swift`) — a classic
+  `RCTEventEmitter`, not a Fabric view, since it has no visual surface.
+  Exported from JS as `subscribeToTelemetry`/`purgeWebData`/`copyToClipboard`
+  in `sea-react-native`. Swift↔React-Core ObjC interop needed `import React`
+  in the Swift file plus `#import <React/RCTEventEmitter.h>` (and
+  `RCTBridgeModule.h`) added to `SeaReactNativeView.mm` — the generated
+  `SeaReactNative-Swift.h` header references `RCTEventEmitter` and
+  `RCTPromise{Resolve,Reject}Block` but doesn't import them itself, so
+  whatever `.mm` file includes that header first must import them.
+- Android is not implemented (`sea-core-android` doesn't exist in this repo
+  yet).
 
 ## Realm changes
 

@@ -1,12 +1,26 @@
 import Foundation
 
+// `Bundle.module` is synthesized by SwiftPM and only exists when this file
+// is compiled as part of an SPM target (`SWIFT_PACKAGE` is defined
+// automatically in that case). The CocoaPods build of this same source
+// (consumed by `sea-react-native`, see `SEACore.podspec`) has no such
+// symbol — resources there land directly in this module's own bundle, so
+// `Bundle(for:)` on a marker type declared in this module finds them.
+#if SWIFT_PACKAGE
+private let seaCoreResourceBundle = Bundle.module
+#else
+private final class SEACoreBundleToken {}
+private let seaCoreResourceBundle = Bundle(for: SEACoreBundleToken.self)
+#endif
+
 /// Localized copy for SEA's native UI (contract §9, spec §18.4/§19).
 ///
-/// All strings are looked up from `Bundle.module` (the package's own
-/// resource bundle), never from the host app's bundle or from web content.
+/// All strings are looked up from SEACore's own resource bundle (SwiftPM's
+/// `Bundle.module` or, under CocoaPods, this module's own bundle — see
+/// above), never from the host app's bundle or from web content.
 enum SEAStrings {
     private static func string(_ key: String) -> String {
-        NSLocalizedString(key, bundle: Bundle.module, comment: "")
+        NSLocalizedString(key, bundle: seaCoreResourceBundle, comment: "")
     }
 
     static var loading: String { string("sea.loading") }
