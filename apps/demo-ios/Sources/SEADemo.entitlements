@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	 Associated Domains (spec §8.3 / §10.2): the `webcredentials` service is
+	 what lets the WKWebView route a Keycloak-driven WebAuthn ceremony
+	 (`navigator.credentials.create/get`, RP ID = the auth host) to the OS
+	 platform authenticator with correct origin binding. Without a validated
+	 associated domain for the RP ID's host, the passkey ceremony cannot bind
+	 and SEA falls back to ASWebAuthenticationSession (§10.4).
+
+	 `?mode=developer` (DEV/TEST HARNESS ONLY): makes the device/Simulator
+	 fetch the apple-app-site-association file DIRECTLY from the host over
+	 HTTPS (served by infra/ nginx) instead of via Apple's CDN, which cannot
+	 reach a local host like auth.bank.local. It also requires the "Associated
+	 Domains Development" toggle under Settings > Developer on the Simulator.
+	 A real bank app ships `webcredentials:auth.bank.com` with NO
+	 `?mode=developer` — the AASA is then served from the real public domain
+	 and validated through Apple's CDN.
+	-->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>webcredentials:auth.bank.local?mode=developer</string>
+	</array>
+</dict>
+</plist>

@@ -12,6 +12,11 @@ public enum SEATelemetryEventName {
     public static let timeout = "AUTH_TIMEOUT"
     public static let captureDetected = "AUTH_CAPTURE_DETECTED"
     public static let logoutCompleted = "AUTH_LOGOUT_COMPLETED"
+
+    /// §10.4 step 4: the WebAuthn fallback ceremony was engaged. Carries
+    /// `reason: preflight|runtime` (spec §20.1) so rollout dashboards show
+    /// the embedded-vs-fallback ratio per OS version.
+    public static let webauthnFallback = "AUTH_WEBAUTHN_FALLBACK"
 }
 
 /// Telemetry redaction helpers (contract §20.2 — normative and CI-tested).

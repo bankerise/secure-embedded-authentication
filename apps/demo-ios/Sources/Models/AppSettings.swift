@@ -35,18 +35,26 @@ final class AppSettings: ObservableObject {
         // the mock: it lets you exercise the WebView surface, but it does not
         // and should not bypass the core's own validation.
         // A COMPLETE, working authorize URL for the local infra/ Keycloak:
-        //   - host localhost (TLS-terminated; in this app's SEASecurityConfig.plist allowlist)
+        //   - host auth.bank.local (TLS-terminated; in this app's
+        //     SEASecurityConfig.plist allowlist). This host is what backs the
+        //     passkey RP ID / Associated Domain (§10), so the WebView MUST load
+        //     from it — not localhost — for a WebAuthn ceremony to bind. It
+        //     resolves to 127.0.0.1 via the Mac's /etc/hosts (the Simulator
+        //     inherits it); see infra/README.md for the one-time sudo line.
         //   - realm bankerise-mobile, client sea-dev-public (the dev-only
         //     public client — see infra/README.md)
+        //   - redirect_uri bkrmob://callback — the scheme SEACore actually
+        //     captures (SEASecurityConfig.plist CallbackScheme). It must match
+        //     the client's registered redirectUris in provision-realm.sh.
         //   - PKCE S256 params, which sea-dev-public enforces. Omitting them
-        //     makes Keycloak 302 straight to bankerise-auth://callback?error=…
+        //     makes Keycloak 302 straight to bkrmob://callback?error=…
         //     which SEA then correctly *captures* as an error-shaped callback
         //     (§6.3) instead of ever showing a login form. The challenge below
         //     is the RFC 7636 worked example (verifier
         //     dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk).
         static let mockRedirectURL =
-            "https://localhost/realms/bankerise-mobile/protocol/openid-connect/auth" +
-            "?client_id=sea-dev-public&redirect_uri=bankerise-auth%3A%2F%2Fcallback" +
+            "https://auth.bank.local/realms/bankerise-mobile/protocol/openid-connect/auth" +
+            "?client_id=sea-dev-public&redirect_uri=bkrmob%3A%2F%2Fcallback" +
             "&response_type=code&scope=openid&state=devstate123" +
             "&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM" +
             "&code_challenge_method=S256"

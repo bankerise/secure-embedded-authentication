@@ -19,9 +19,14 @@ targets:
       - path: Sources
         excludes:
           - Info.plist
+          - SEADemo.entitlements
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bankerise.sea.demo
+        # Associated Domains entitlement (spec §8.3/§10.2) — enables the
+        # WebAuthn/passkey ceremony to bind in the WKWebView. Referenced as a
+        # build setting so XcodeGen treats it as an input, not a resource.
+        CODE_SIGN_ENTITLEMENTS: Sources/SEADemo.entitlements
         PRODUCT_NAME: SEADemo
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1,2"

@@ -297,24 +297,40 @@ a {
 }
 
 /* --------------------------------------------------------------------------
-   8. Passkey CTA slot (DEFERRED — placeholder only, see login.ftl comment)
+   8. Passkey-first CTA (spec §10) — primary sign-in action above the password
+      form. Jumps to Keycloak's WebAuthn Passwordless authenticator; see the
+      login.ftl comment for the flow-selection mechanism.
    -------------------------------------------------------------------------- */
+#sea-passkey-form {
+  margin: 0;
+}
+
 .sea-passkey-cta {
   width: 100%;
   min-height: var(--sea-tap-target-min);
   margin-bottom: var(--sea-space-5);
   padding: var(--sea-space-3) var(--sea-space-4);
   border-radius: var(--sea-radius-md);
-  border: 1px dashed var(--sea-color-border);
-  background: var(--sea-color-disabled-bg);
-  color: var(--sea-color-disabled-text);
-  font-size: var(--sea-font-size-body);
-  font-weight: var(--sea-font-weight-medium);
+  border: none;
+  background: var(--sea-color-primary);
+  color: var(--sea-color-text-on-primary);
+  font-size: var(--sea-font-size-input);
+  font-weight: var(--sea-font-weight-semibold);
+  font-family: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--sea-space-2);
-  cursor: not-allowed;
+  cursor: pointer;
+  transition: background-color var(--sea-transition-fast), transform var(--sea-transition-fast);
+}
+
+.sea-passkey-cta:hover {
+  background: var(--sea-color-primary-hover);
+}
+
+.sea-passkey-cta:active {
+  background: var(--sea-color-primary-active);
 }
 
 .sea-passkey-cta svg {

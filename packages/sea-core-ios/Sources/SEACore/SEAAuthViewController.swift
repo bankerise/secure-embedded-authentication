@@ -249,6 +249,18 @@ final class SEAAuthViewController: UIViewController {
     }
 
     func handleNavigationFailure(_ error: Error) {
+        // Post-terminal suppression (contract §4): once a terminal outcome has
+        // fired (typically capture), the session is over and this VC is
+        // dismissing. A late navigation failure — most commonly WebKit
+        // reporting the *cancelled* `bkrmob://` callback redirect as something
+        // other than NSURLErrorCancelled (e.g. NSURLErrorUnsupportedURL /
+        // WebKitErrorDomain) — must never record AUTH_FAILED or flash an error
+        // modal over a successful login. The capture always lands first (it is
+        // synchronous in `apply(decision:)`; this delegate callback is a later
+        // main-thread turn), so `hasFired` is reliably set by the time we get
+        // here in that race.
+        guard !terminalGuard.hasFired else { return }
+
         let nsError = error as NSError
         // WebKit reports our own decidePolicyFor(.cancel) calls (callback
         // capture / navigation block) as NSURLErrorCancelled. That is not a
@@ -261,6 +273,9 @@ final class SEAAuthViewController: UIViewController {
     }
 
     func handleServerError(statusCode: Int) {
+        // Same post-terminal suppression as handleNavigationFailure: never
+        // surface a 5xx over an already-terminal session.
+        guard !terminalGuard.hasFired else { return }
         SEATelemetry.record(name: SEATelemetryEventName.failed, properties: ["code": "server"])
         showError(.serverError(statusCode: statusCode))
     }

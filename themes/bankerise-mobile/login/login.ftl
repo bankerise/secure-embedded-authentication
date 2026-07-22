@@ -18,21 +18,46 @@
 
         <p class="sea-subtitle">${msg("seaLoginSubtitle")}</p>
 
-        <#-- DEFERRED: passkey / biometric sign-in is not implemented in this
-             build. This element is intentionally non-functional: disabled,
-             aria-disabled, tabindex="-1", and not inside a <form> so it can
-             never submit. It exists only to reserve the primary-CTA slot at
-             the top of the layout for when passkeys ship. Do not wire this
-             up without also removing the disabled/aria-disabled attributes
-             and giving it a real action. -->
-        <button type="button" class="sea-passkey-cta" disabled aria-disabled="true" tabindex="-1">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                <path d="M12 2a5 5 0 0 0-5 5v3a1 1 0 0 0 2 0V7a3 3 0 1 1 6 0v3a1 1 0 0 0 2 0V7a5 5 0 0 0-5-5Z" fill="currentColor"/>
-                <path d="M6 10h12a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-9a1 1 0 0 1 1-1Zm6 4a1.5 1.5 0 0 0-1 2.62V18a1 1 0 0 0 2 0v-1.38A1.5 1.5 0 0 0 12 14Z" fill="currentColor"/>
-            </svg>
-            <span>${msg("seaPasskeyComingSoon")}</span>
-        </button>
-        <div class="sea-divider">${msg("seaOrDivider")}</div>
+        <#-- Passkey-first primary CTA (spec §10). Passkeys ship in v1: this is
+             the top sign-in action, above the username/password form.
+
+             It jumps straight to Keycloak's WebAuthn Passwordless authenticator
+             by POSTing that execution's authExecId as `authenticationExecution`
+             — the exact mechanism the "Try Another Way" selector uses, surfaced
+             here as a one-tap primary action so users get the passkey ceremony
+             immediately instead of digging through the selector. The
+             authenticator runs usernameless (resident-key / discoverable
+             credential), so no username is required first.
+
+             We deliberately do NOT use conditional-UI autofill: that path is
+             driven by `enableWebAuthnConditionalUI`, which on this Keycloak is
+             set only by the deprecated WebAuthnConditionalUIAuthenticator
+             (feature off) — and autofill is unreliable inside WKWebView anyway.
+
+             Rendered only when the passwordless passkey authenticator is
+             actually offered as a selection (auth.authenticationSelections), so
+             a realm without passkeys — or a step where it is not applicable —
+             degrades cleanly to the password form with no dead button. -->
+        <#assign seaPasskeyExecId = "">
+        <#if auth?? && auth.authenticationSelections??>
+            <#list auth.authenticationSelections as sel>
+                <#if sel.displayName == "webauthn-passwordless-display-name">
+                    <#assign seaPasskeyExecId = sel.authExecId>
+                </#if>
+            </#list>
+        </#if>
+        <#if seaPasskeyExecId?has_content>
+            <form id="sea-passkey-form" action="${url.loginAction}" method="post">
+                <button type="submit" name="authenticationExecution" value="${seaPasskeyExecId}" class="sea-passkey-cta">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                        <path d="M12 2a5 5 0 0 0-5 5v3a1 1 0 0 0 2 0V7a3 3 0 1 1 6 0v3a1 1 0 0 0 2 0V7a5 5 0 0 0-5-5Z" fill="currentColor"/>
+                        <path d="M6 10h12a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-9a1 1 0 0 1 1-1Zm6 4a1.5 1.5 0 0 0-1 2.62V18a1 1 0 0 0 2 0v-1.38A1.5 1.5 0 0 0 12 14Z" fill="currentColor"/>
+                    </svg>
+                    <span>${msg("webauthn-doAuthenticate")}</span>
+                </button>
+            </form>
+            <div class="sea-divider">${msg("seaOrDivider")}</div>
+        </#if>
 
         <div id="kc-form">
           <div id="kc-form-wrapper">
