@@ -8,9 +8,16 @@ public enum SEAError: Error, Equatable {
     case invalidAuthorizeURL(reason: SEAInvalidURLReason)
     case serverError(statusCode: Int)
 
-    /// Phase 2 (§10). Passkeys/WebAuthn are out of scope for Phase 1. This
-    /// case is declared to keep the cross-bridge error taxonomy stable but is
-    /// never thrown by this package in Phase 1.
+    /// §10.4: the WebAuthn fallback path itself could not be started. This
+    /// is *not* thrown just because the embedded WKWebView ceremony is
+    /// unsupported or fails live — that case is handled transparently by
+    /// routing the whole login attempt through `SEAFallbackAuthRunner`
+    /// (`ASWebAuthenticationSession`), which still resolves via the normal
+    /// `onCaptured`/`onCancelled`/`onError` contract. This case is reachable
+    /// only when the fallback itself cannot run, e.g.
+    /// `SEAEnvironment.current.callbackScheme` is empty (fail-closed host
+    /// misconfiguration, contract §3.3) — there is no scheme an
+    /// `ASWebAuthenticationSession` could ever be started with.
     case webauthnUnavailable
 
     /// Phase 2 (§21). Kill-switch fallback is a Bankerise-SDK-level concern

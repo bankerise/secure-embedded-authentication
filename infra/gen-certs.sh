@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 mkdir -p tls
 
 mkcert -cert-file tls/sea-dev.pem -key-file tls/sea-dev-key.pem \
-       localhost 127.0.0.1 ::1
+       localhost 127.0.0.1 ::1 auth.bank.local
 
 echo
 echo "✓ Certificate written to infra/tls/"

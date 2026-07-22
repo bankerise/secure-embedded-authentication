@@ -30,6 +30,17 @@ public final class SEASession {
     /// Validates `config` (contract §6.2) and returns a presentable view
     /// controller. Throws `SEAError.invalidAuthorizeURL` before anything is
     /// loaded — no navigation, no WebView work happens on a rejected URL.
+    ///
+    /// Also applies the spec §10.4 pre-flight WebAuthn capability probe: if
+    /// `SEAWebAuthnCapability` reports the embedded WKWebView ceremony is
+    /// unsupported on this OS, the *entire* login attempt is routed to the
+    /// `ASWebAuthenticationSession` fallback path (`SEAFallbackEntryViewController`
+    /// → `SEAFallbackAuthRunner`) instead of the normal embedded
+    /// `SEAAuthViewController` — per spec, SEA cannot know ahead of time
+    /// whether a given login will need a passkey ceremony, so the decision
+    /// is made once, up front, for the whole attempt. Either way the result
+    /// is type-erased to `UIViewController` and resolves through the exact
+    /// same `Callbacks` contract, so this is invisible to callers.
     public static func makeViewController(
         config: SEAConfig,
         callbacks: Callbacks
@@ -44,6 +55,31 @@ public final class SEASession {
             break
         }
 
+        return viewController(for: config, environment: environment, callbacks: callbacks)
+    }
+
+    /// Factors the embedded-vs-fallback decision (spec §10.4 step 1,
+    /// pre-flight) out of `makeViewController` so it is directly
+    /// unit-testable: tests can pass `embeddedCeremonySupported` explicitly
+    /// rather than depending on whatever OS version actually runs the test,
+    /// and can exercise the fallback wiring path even on a modern
+    /// Simulator/device where `SEAWebAuthnCapability`'s real default would
+    /// choose the embedded path. `internal`, not `private`, for exactly that
+    /// reason — see `SEACoreTests`.
+    static func viewController(
+        for config: SEAConfig,
+        environment: SEAEnvironment,
+        callbacks: Callbacks,
+        embeddedCeremonySupported: Bool = SEAWebAuthnCapability.isEmbeddedCeremonySupported()
+    ) -> UIViewController {
+        guard embeddedCeremonySupported else {
+            return SEAFallbackEntryViewController(
+                config: config,
+                environment: environment,
+                callbacks: callbacks,
+                reason: "preflight"
+            )
+        }
         return SEAAuthViewController(config: config, environment: environment, callbacks: callbacks)
     }
 

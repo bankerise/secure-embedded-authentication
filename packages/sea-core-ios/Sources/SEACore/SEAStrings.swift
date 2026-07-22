@@ -27,9 +27,12 @@ enum SEAStrings {
     static var errorGenericMessage: String { string("sea.error.generic.message") }
 
     /// Maps a `SEAError` to the (title, message) pair for the native error
-    /// state view. Only the error cases reachable in Phase 1 are given
-    /// distinct copy; `.webauthnUnavailable` / `.killSwitched` are unreachable
-    /// (see `SEAError`'s doc comments) and fall back to generic copy.
+    /// state view. `.webauthnUnavailable` is reachable (see `SEAError`'s doc
+    /// comment) but only via `SEAFallbackAuthRunner`, which has no native
+    /// error-state view of its own and fires `onError` directly — so it
+    /// never actually reaches this function in practice today. `.killSwitched`
+    /// remains unreachable (Phase 2, §21). Both fall back to generic copy
+    /// here for taxonomy completeness.
     static func copy(for error: SEAError) -> (title: String, message: String) {
         switch error {
         case .network:

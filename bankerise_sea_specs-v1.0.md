@@ -534,6 +534,10 @@ Passkey registration and authentication are **Keycloak-driven WebAuthn ceremonie
 
 > **Engineering note (verify during spike):** WebAuthn-in-WebView support has changed across OS releases on both platforms and is the least stable dependency in this spec. The spike must produce the exact (OS, WebView, WKWebView) support matrix, feed §25, and validate both registration and authentication ceremonies plus conditional UI (autofill-style passkey suggestions), which may not be available in WebViews even where modal ceremonies are.
 
+> **Implementation status (v1 spike — iOS):** Both the **registration** (`navigator.credentials.create`) and **authentication** (`navigator.credentials.get`, usernameless/resident-key) ceremonies were validated **inside the embedded `WKWebView`** — the modal platform-authenticator sheet presents and completes, with no `ASWebAuthenticationSession` fallback — on the iOS **26.5 Simulator** with a validated `webcredentials:auth.bank.local` associated domain (developer mode). Two findings worth carrying forward:
+> - **The embedded ceremony works; an earlier apparent "WKWebView can't do WebAuthn" failure was a *theme* bug, not a platform limit.** Keycloak's `webauthnRegister.js`/`webauthnAuthenticate.js` bare-import `"rfc4648"`, which the browser resolves only via the `<script type="importmap">` emitted by `base/login/template.ftl`. A custom theme that replaces `template.ftl` **must re-emit that import map**, or the module fails to load and the ceremony button silently does nothing — with no console error inside `ASWebAuthenticationSession`'s Safari view, so it mimics a platform failure. This is now the single most important gotcha for §18.2 themes.
+> - **Conditional UI (autofill) is *not* used on iOS.** On Keycloak 26.6 the `enableWebAuthnConditionalUI` path is driven only by the deprecated `WebAuthnConditionalUIAuthenticator` (feature off by default), and autofill mediation is unreliable in `WKWebView` regardless. Passkey-first is therefore delivered as an **explicit primary CTA** (§10.3) that jumps to the passwordless authenticator, not as autofill — matching the engineering-note caveat that conditional UI "may not be available in WebViews."
+
 ### 10.3 Keycloak configuration
 
 - WebAuthn Register (passwordless) required action + WebAuthn Passwordless authenticator in the browser flow.
@@ -550,6 +554,11 @@ If the WebView environment cannot perform WebAuthn (capability probe at SEA star
 4. Telemetry records the fallback (`AUTH_WEBAUTHN_FALLBACK`) so rollout dashboards show the embedded-vs-fallback ratio per OS version.
 
 This is the same machinery as the kill switch (§21) applied per-attempt.
+
+> **Implementation status (v1 spike — iOS):**
+> - The pre-flight probe (`SEAWebAuthnCapability`, step 1) is an OS-version floor comparison; the fallback path (`SEAFallbackEntryViewController` → `SEAFallbackAuthRunner` → `ASWebAuthenticationSession`) is wired and validated end-to-end, resolving through the same `onCaptured`/`onCancelled`/`onError` contract as the embedded path and emitting `AUTH_WEBAUTHN_FALLBACK`. The throwaway entry view controller **self-dismisses after any terminal outcome** (mirroring `SEAAuthViewController.dismissSelf`), so the fallback leaves no blank anchor on screen.
+> - **Live (runtime) failure detection — step 1's "ceremony JS error" trigger — is deliberately *not* wired in v1.** The exact Keycloak error vocabulary is spike-provisional, and mis-routing a legitimate user cancel into an auto-restart is worse than not auto-falling-back. Because the embedded ceremony was validated as working (§10.2), the pre-flight OS floor is the only fallback trigger today. Wiring live detection (`SEAWebAuthnLiveFailure` predicate exists but is unused) is a follow-up once the error vocabulary is pinned on real devices.
+> - The embedded path also **suppresses any post-terminal navigation/server error**: once capture fires, WebKit reporting the cancelled `bkrmob://` callback redirect as a non-`NSURLErrorCancelled` error (e.g. `NSURLErrorUnsupportedURL`) must never surface a spurious network-error modal over a successful login.
 
 ### 10.5 Why passkeys strengthen this design
 
@@ -889,11 +898,13 @@ Harnesses: the native demo apps (`demo-ios`, `demo-android`, §4.4) are the prim
 | Capability | iOS floor | Android floor | Below floor behavior |
 |---|---|---|---|
 | Embedded WebView login (no passkeys) | TBD (spike) | TBD (spike) | n/a — baseline |
-| Passkeys in embedded WebView | TBD — associated-domain WebAuthn support version | TBD — WebView provider version with Credential Manager routing | §10.4 fallback ceremony |
-| Conditional passkey UI (autofill suggestions) | TBD | TBD | Modal ceremony only |
+| Passkeys in embedded WebView | Validated on **iOS 26.5** (Simulator); registration + usernameless auth work embedded. Real floor TBD — needs older-OS device-lab run | TBD — WebView provider version with Credential Manager routing | §10.4 fallback ceremony |
+| Conditional passkey UI (autofill suggestions) | **Not used** on iOS (§10.2) — deprecated on Keycloak 26.6 + unreliable in WKWebView; passkey-first delivered as explicit CTA instead | TBD | Modal ceremony only |
 | Play Integrity / App Attest | App Attest floor | Play services floor | §16.2 soft-fail policy |
 
 > The spike deliverable is this table with exact versions plus the measured embedded-passkey success rate per OS version from a device-lab run. §21 thresholds are then set from real data.
+>
+> **Spike progress (iOS):** the embedded passkey ceremony is confirmed working on iOS 26.5 (Simulator) with the `auth.bank.local` associated domain; `SEAWebAuthnCapability.embeddedSupportFloor` remains the provisional `16.0` pending a device-lab sweep of older OSes to set the real floor. The one hard prerequisite discovered — the theme `rfc4648` import map (§10.2) — is not an OS-version concern but a theme-packaging one.
 
 ---
 

@@ -79,6 +79,22 @@
             <script src="${script}" type="text/javascript"></script>
         </#list>
     </#if>
+
+    <#-- Import map for the ES-module resources shipped by the base/common
+         themes — currently `rfc4648`, bare-imported at the top of
+         webauthnRegister.js and webauthnAuthenticate.js. Because this theme
+         fully replaces base/login/template.ftl, it MUST re-emit this map (base
+         emits its own): without it the browser cannot resolve the bare
+         `import { base64url } from "rfc4648"`, the WebAuthn module fails to
+         load, and the passkey register/authenticate button silently never
+         wires up its click handler. Kept in sync with base/login/template.ftl. -->
+    <script type="importmap">
+        {
+            "imports": {
+                "rfc4648": "${url.resourcesCommonPath}/vendor/rfc4648/rfc4648.js"
+            }
+        }
+    </script>
 </head>
 
 <body class="${properties.kcBodyClass!}" data-page-id="login-${pageId}">
