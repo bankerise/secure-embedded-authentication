@@ -11,6 +11,15 @@ import SEACore
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
+    /// PKCE `code_verifier` that pairs with the default mock authorize URL's
+    /// `code_challenge` (`E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM`, S256) —
+    /// the RFC 7636 Appendix-B worked example. Used ONLY by the mock path's
+    /// `TokenExchangeClient` to complete a real code→token exchange straight
+    /// against Keycloak (so the demo can obtain an `id_token` for RP-initiated
+    /// logout). If the tester edits the mock URL to use a different challenge,
+    /// this verifier no longer matches and the exchange will fail by design.
+    static let mockCodeVerifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+
     private enum Keys {
         static let gatewayBaseURL = "sea.demo.gatewayBaseURL"
         static let allowedDomains = "sea.demo.allowedDomains"
