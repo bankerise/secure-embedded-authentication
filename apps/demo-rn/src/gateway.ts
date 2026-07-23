@@ -1,0 +1,73 @@
+import { currentDeviceId } from './deviceIdentity';
+
+/**
+ * Result of the §6.1 two-hop start sequence: the final Keycloak authorize
+ * URL SEACore will validate and load, plus the mode/provider the gateway
+ * reported. Mirrors apps/demo-ios/Sources/Networking/AuthGateway.swift.
+ */
+export type GatewayStartResult = Readonly<{
+  authorizeUrl: string;
+  authMode: string; // "EMBEDDED" | "SYSTEM_BROWSER" (absent -> EMBEDDED, §21)
+  provider: string;
+}>;
+
+export class GatewayError extends Error {}
+
+// DEMO/TEST-ONLY value for this specific showcase environment — not a real
+// secret, just an app-identity header the showcase gateway expects (mirrors
+// GatewayClient.swift's demoAppVersionKey).
+const DEMO_APP_VERSION_KEY = '4ZvAEYVC2Xk3';
+
+type StartResponse = { redirect: string; authMode?: string; provider: string };
+type RedirectResponse = { redirectUrl: string; provider: string };
+
+async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, init);
+  const body = await response.text();
+  if (!response.ok) {
+    throw new GatewayError(`Gateway returned HTTP ${response.status}: ${body}`);
+  }
+  try {
+    return JSON.parse(body) as T;
+  } catch (error) {
+    throw new GatewayError(`Failed to decode gateway response: ${String(error)}`);
+  }
+}
+
+/**
+ * Real implementation of the §6.1 two-hop gateway start sequence. Mirrors
+ * GatewayClient.swift; this app has no cookie-jar concern to manage
+ * separately since RN's fetch doesn't share cookies with the WebView's
+ * WKWebsiteDataStore in the first place (§6.5 is inherently satisfied).
+ */
+export async function startAuthorization(
+  gatewayBaseURL: string
+): Promise<GatewayStartResult> {
+  const base = gatewayBaseURL.replace(/\/+$/, '');
+
+  let start: StartResponse;
+  try {
+    start = await getJSON<StartResponse>(`${base}/authorization`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US',
+        'X-App-Version-Key': DEMO_APP_VERSION_KEY,
+        'X-Device-ID': currentDeviceId(),
+      },
+    });
+  } catch (error) {
+    if (error instanceof GatewayError) throw error;
+    throw new GatewayError(`Invalid gateway base URL or network error: ${String(error)}`);
+  }
+
+  const redirectUrl = new URL(start.redirect, `${base}/`).toString();
+  const redirect = await getJSON<RedirectResponse>(redirectUrl, { method: 'GET' });
+
+  return {
+    authorizeUrl: redirect.redirectUrl,
+    // §21: authMode absent from the real response entirely -> absent means EMBEDDED.
+    authMode: start.authMode ?? 'EMBEDDED',
+    provider: redirect.provider,
+  };
+}

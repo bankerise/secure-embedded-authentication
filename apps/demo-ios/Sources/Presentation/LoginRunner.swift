@@ -12,10 +12,16 @@ final class LoginRunner: ObservableObject {
 
     private let settings: AppSettings
     private let resultStore: SessionResultStore
+    private let tokenStore: SessionTokenStore
 
-    init(settings: AppSettings = .shared, resultStore: SessionResultStore = .shared) {
+    init(
+        settings: AppSettings = .shared,
+        resultStore: SessionResultStore = .shared,
+        tokenStore: SessionTokenStore = .shared
+    ) {
         self.settings = settings
         self.resultStore = resultStore
+        self.tokenStore = tokenStore
     }
 
     func startLogin() {
@@ -60,9 +66,37 @@ final class LoginRunner: ObservableObject {
             timeoutMs: settings.timeoutMs
         )
 
+        // Remember what Logout needs from this session: the authorize URL (to
+        // derive Keycloak's logout endpoint) and whether it's the mock path
+        // (only then do we exchange the code for an id_token, below).
+        let authorizeURL = startResult.redirectURL
+        let isMock = settings.useMockGateway
+        tokenStore.beginSession(authorizeURL: authorizeURL, wasMock: isMock)
+
         let callbacks = SEASession.Callbacks(
-            onCaptured: { [resultStore] params in
+            onCaptured: { [resultStore, tokenStore] params in
                 resultStore.recordCaptured(params)
+                // Mock path only: exchange the code for tokens so Logout has an
+                // id_token_hint. The real gateway does this server-side (§6.4),
+                // so the app never touches tokens there.
+                guard isMock, let code = params.code else { return }
+                tokenStore.beginExchange()
+                // @MainActor so the store's @Published writes stay on main; the
+                // exchange's network I/O still offloads inside URLSession.
+                Task { @MainActor in
+                    do {
+                        let tokens = try await TokenExchangeClient().exchange(
+                            code: code,
+                            authorizeURL: authorizeURL,
+                            codeVerifier: AppSettings.mockCodeVerifier
+                        )
+                        tokenStore.recordIdToken(tokens.idToken)
+                    } catch {
+                        tokenStore.recordExchangeFailure(
+                            (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+                        )
+                    }
+                }
             },
             onCancelled: { [resultStore] in
                 resultStore.recordCancelled()

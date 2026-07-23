@@ -1,0 +1,8 @@
+{
+  "name": "bankerise-sea",
+  "private": true,
+  "workspaces": [
+    "packages/sea-react-native",
+    "apps/demo-rn"
+  ]
+}

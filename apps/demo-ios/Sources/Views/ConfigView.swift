@@ -6,6 +6,8 @@ import SEACore
 struct ConfigView: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var runner: LoginRunner
+    @StateObject private var logoutRunner = LogoutRunner()
+    @ObservedObject private var tokenStore = SessionTokenStore.shared
 
     var body: some View {
         NavigationView {
@@ -76,6 +78,46 @@ struct ConfigView: View {
                             .font(.footnote)
                             .foregroundColor(.red)
                     }
+                }
+
+                Section {
+                    Button {
+                        logoutRunner.logout()
+                    } label: {
+                        if logoutRunner.isLoggingOut {
+                            HStack {
+                                ProgressView()
+                                Text("Logging out…")
+                            }
+                        } else {
+                            Text("Logout")
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .disabled(logoutRunner.isLoggingOut)
+
+                    if let status = tokenStore.status {
+                        Text(status)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                    if let message = logoutRunner.message {
+                        Text(message)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                    if let logoutURL = logoutRunner.gatewayLogoutURL {
+                        Text(logoutURL)
+                            .font(.system(.footnote, design: .monospaced))
+                            .foregroundColor(.secondary)
+                            .textSelection(.enabled)
+                    }
+                } header: {
+                    Text("Logout")
+                } footer: {
+                    Text(settings.useMockGateway
+                         ? "Mock: RP-initiated logout straight to Keycloak using the id_token from the last login (invalidates the SSO session server-side)."
+                         : "Real: POST /gw/logout returns a Keycloak logout URL enriched with id_token_hint, to be called separately from the app.")
                 }
 
                 Section("Session data") {
