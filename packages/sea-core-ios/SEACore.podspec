@@ -2,18 +2,20 @@ require 'json'
 
 Pod::Spec.new do |s|
   s.name         = 'SEACore'
-  s.version      = '0.1.0'
+  s.version      = '0.0.1'
   s.summary      = 'Bankerise SEA — hardened embedded WebView auth core (iOS).'
-  s.homepage     = 'https://github.com/bankerise/bankerise-sea'
+  s.homepage     = 'https://gitlab.proxym-group.net:3022/bankerise-platform/bankerise-sea'
   s.license      = { :type => 'Proprietary' }
   s.author       = 'Bankerise'
   s.platform     = :ios, '15.0'
   s.swift_version = '5.9'
-  s.source       = { :path => '.' }
+  s.source       = {
+    :git => 'ssh://git@gitlab.proxym-group.net:3022/bankerise-platform/bankerise-sea.git',
+    :tag => "sea-core-ios/#{s.version}"
+  }
 
-  # Dev-mode consumption only (spec §4.5): the RN podspec/Podfile point at
-  # this package by local :path. Release mode will vendor a signed
-  # XCFramework instead — out of scope here.
-  s.source_files = 'Sources/SEACore/**/*.swift'
-  s.resources    = 'Sources/SEACore/Resources/**/*.lproj'
+  # s.source checks out the whole monorepo at the given tag, so paths below
+  # are repo-root-relative rather than package-relative.
+  s.source_files = 'packages/sea-core-ios/Sources/SEACore/**/*.swift'
+  s.resources    = 'packages/sea-core-ios/Sources/SEACore/Resources/**/*.lproj'
 end
