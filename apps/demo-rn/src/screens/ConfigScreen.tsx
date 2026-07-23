@@ -19,6 +19,12 @@ type Props = {
   onStartLogin: () => void;
   onPurgeWebData: () => void;
   purgeMessage: string | null;
+  useMockGateway: boolean;
+  isLoggingOut: boolean;
+  onLogout: () => void;
+  tokenStatus: string | null;
+  logoutMessage: string | null;
+  gatewayLogoutURL: string | null;
 };
 
 const MIN_TIMEOUT_MS = 5_000;
@@ -34,6 +40,12 @@ export function ConfigScreen({
   onStartLogin,
   onPurgeWebData,
   purgeMessage,
+  useMockGateway,
+  isLoggingOut,
+  onLogout,
+  tokenStatus,
+  logoutMessage,
+  gatewayLogoutURL,
 }: Props): React.JSX.Element {
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
@@ -135,6 +147,29 @@ export function ConfigScreen({
         {lastStartError && <Text style={styles.error}>{lastStartError}</Text>}
       </Section>
 
+      <Section title="Logout">
+        {isLoggingOut ? (
+          <View style={styles.row}>
+            <ActivityIndicator />
+            <Text style={styles.label}>Logging out…</Text>
+          </View>
+        ) : (
+          <Button title="Logout" onPress={onLogout} />
+        )}
+        {tokenStatus && <Text style={styles.hint}>{tokenStatus}</Text>}
+        {logoutMessage && <Text style={styles.hint}>{logoutMessage}</Text>}
+        {gatewayLogoutURL && (
+          <Text style={[styles.hint, styles.mono]} selectable>
+            {gatewayLogoutURL}
+          </Text>
+        )}
+        <Text style={styles.footer}>
+          {useMockGateway
+            ? 'Mock: RP-initiated logout straight to Keycloak using the id_token from the last login (invalidates the SSO session server-side).'
+            : 'Real: POST /gw/logout returns a Keycloak logout URL enriched with id_token_hint, to be called separately from the app.'}
+        </Text>
+      </Section>
+
       <Section title="Session data">
         <Button title="Purge web data" color="#c0392b" onPress={onPurgeWebData} />
         {purgeMessage && <Text style={styles.hint}>{purgeMessage}</Text>}
@@ -218,4 +253,5 @@ const styles = StyleSheet.create({
   },
   error: { color: '#c0392b', fontSize: 12 },
   hint: { color: '#6d6d72', fontSize: 12 },
+  footer: { color: '#8e8e93', fontSize: 11, marginTop: 4 },
 });

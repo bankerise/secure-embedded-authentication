@@ -14,6 +14,7 @@ import { startAuthorization as startMockAuthorization } from './src/mockGateway'
 import { startAuthorization as startRealAuthorization } from './src/gateway';
 import { allowedDomainsArray, DEFAULT_SETTINGS, type Settings } from './src/settings';
 import type { Result } from './src/types';
+import { useSessionLogout } from './src/useSessionLogout';
 import { ConfigScreen } from './src/screens/ConfigScreen';
 import { ResultScreen } from './src/screens/ResultScreen';
 import { TelemetryScreen } from './src/screens/TelemetryScreen';
@@ -27,6 +28,7 @@ function App(): React.JSX.Element {
   const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
   const [authorizeUrl, setAuthorizeUrl] = useState<string | null>(null);
   const [result, setResult] = useState<Result>({ kind: 'idle' });
+  const session = useSessionLogout(settings);
 
   const onChangeSettings = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => ({ ...prev, ...patch }));
@@ -41,12 +43,14 @@ function App(): React.JSX.Element {
         ? await startMockAuthorization(settings.mockRedirectURL)
         : await startRealAuthorization(settings.gatewayBaseURL);
       setAuthorizeUrl(start.authorizeUrl);
+      // Remember what Logout needs from this session (authorize URL + mock flag).
+      session.beginSession(start.authorizeUrl, settings.useMockGateway);
     } catch (error) {
       setLastStartError(error instanceof Error ? error.message : String(error));
     } finally {
       setIsRunning(false);
     }
-  }, [isRunning, settings]);
+  }, [isRunning, settings, session]);
 
   const dismiss = useCallback(() => setAuthorizeUrl(null), []);
 
@@ -68,6 +72,12 @@ function App(): React.JSX.Element {
           onStartLogin={startLogin}
           onPurgeWebData={onPurgeWebData}
           purgeMessage={purgeMessage}
+          useMockGateway={settings.useMockGateway}
+          isLoggingOut={session.isLoggingOut}
+          onLogout={session.logout}
+          tokenStatus={session.tokenStatus}
+          logoutMessage={session.logoutMessage}
+          gatewayLogoutURL={session.gatewayLogoutURL}
         />
       )}
       {activeTab === 'result' && (
@@ -85,6 +95,8 @@ function App(): React.JSX.Element {
           timeoutMs={settings.timeoutMs}
           onCaptured={(params) => {
             setResult({ kind: 'captured', params, at: Date.now() });
+            // Mock path only: exchange the code so Logout has an id_token_hint.
+            session.handleCaptured(params);
             dismiss();
           }}
           onCancelled={() => {

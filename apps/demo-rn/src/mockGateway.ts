@@ -22,6 +22,15 @@ export const ALLOWED_DOMAINS = [
   'platform-keycloak.pres.proxym-it.net',
 ];
 
+/**
+ * PKCE `code_verifier` that pairs with MOCK_AUTHORIZE_URL's `code_challenge`
+ * (`E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM`, S256) — the RFC 7636 worked
+ * example. Mirrors apps/demo-ios/Sources/Models/AppSettings.swift's
+ * `mockCodeVerifier`. Used only by the mock-path token exchange so Logout has
+ * an `id_token_hint`; never a real secret.
+ */
+export const MOCK_CODE_VERIFIER = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
+
 export async function startAuthorization(
   redirectUrl: string = MOCK_AUTHORIZE_URL
 ): Promise<{ authorizeUrl: string; authMode: string; provider: string }> {
