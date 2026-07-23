@@ -427,13 +427,21 @@ Notes:
   needed in dev.
 - `apps/demo-rn` has three tabs (hand-rolled, no navigation library):
   Config (gateway URL / mock toggle / allowed domains / presentation /
-  timeout / start / purge web data), Result, and Telemetry — mirroring
-  `apps/demo-ios`'s ConfigView/ResultsView/TelemetryConsoleView. The Fuzz
-  view is intentionally not ported: it drives `SEACore`'s internal
+  timeout / start login / logout / purge web data), Result, and Telemetry —
+  mirroring `apps/demo-ios`'s ConfigView/ResultsView/TelemetryConsoleView.
+  The Fuzz view is intentionally not ported: it drives `SEACore`'s internal
   Swift-only fuzz harness directly and isn't part of the bridge surface
   `sea-react-native` exposes. Settings are in-memory only (no
   AsyncStorage-equivalent dependency), unlike `apps/demo-ios`'s persisted
   `UserDefaults`.
+- Logout (§11.3) is pure TypeScript (`apps/demo-rn/src/logout.ts`,
+  `useSessionLogout.ts`) — a port of `apps/demo-ios`'s
+  `LogoutRunner`/`SessionTokenStore`, simplified because RN's cookie-jar
+  semantics differ from native: `fetch` does **not** share cookies with the
+  WKWebView's `WKWebsiteDataStore` (so the mock path needs no special
+  cookie handling) but **does** share one jar across all RN fetches (so the
+  real gateway's `POST /gw/logout` automatically carries the session cookie
+  with no explicit `URLSessionConfiguration`-style setup, unlike iOS).
 - Telemetry (§20) and purge-web-data (§11.3) cross the bridge via a small
   `SeaTelemetryEmitter` native module
   (`packages/sea-react-native/ios/SeaTelemetryEmitter.swift`) — a classic

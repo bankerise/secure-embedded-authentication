@@ -12,7 +12,7 @@ worth the dependency for three screens), mirroring
 
 - **Config** (`src/screens/ConfigScreen.tsx`) — gateway base URL, mock
   gateway toggle + editable mock redirect URL, allowed domains, presentation
-  (sheet/fullscreen), timeout, Start login, Purge web data.
+  (sheet/fullscreen), timeout, Start login, Logout, Purge web data.
 - **Result** (`src/screens/ResultScreen.tsx`) — the last `onCaptured` /
   `onCancelled` / `onError` outcome, raw params shown verbatim (this is a
   dev harness, not a production integration).
@@ -35,6 +35,16 @@ sequence, mirroring `GatewayClient.swift`, toggled by the Config screen's
 `<SecureAuthenticationView>` from `sea-react-native`. All validation,
 navigation policy, and WebView hardening live in `SEACore`; the bridge only
 marshals props in and events out (§7.4).
+
+Logout (`src/logout.ts`, `src/useSessionLogout.ts`) mirrors
+`apps/demo-ios`'s `LogoutRunner`/`SessionTokenStore`, but is simpler than the
+iOS version because RN's `fetch` does not share cookies with the WKWebView's
+`WKWebsiteDataStore`: the mock path exchanges the captured `code` for an
+`id_token` (RFC 7636 worked-example verifier, demo-only) purely to get an
+`id_token_hint` for RP-initiated logout against Keycloak directly; the real
+gateway path calls `POST /gw/logout`, which automatically carries the
+gateway's session cookie since all RN fetches share one jar — no explicit
+cookie-jar config needed, unlike iOS's `URLSessionConfiguration` setup.
 
 `ios/demo_rn/demo_rn.entitlements` (associated domains,
 `webcredentials:auth.bank.local?mode=developer`) is what makes the

@@ -12,10 +12,16 @@ Scope of Phase 1 (this document):
 - §18.1 sheet presentation + appearance
 - §20.1 telemetry event emission
 
-**Explicitly out of scope for Phase 1:** passkeys / WebAuthn (§10), App Attest
-(§16), TLS pinning (§15), JS bridge (§14), broker EXTERNAL_TAB (§12.4),
-kill-switch fallback via ASWebAuthenticationSession (§21). Where the spec
-requires these, leave a documented seam — never a stub that silently succeeds.
+**Explicitly out of scope for Phase 1:** JS bridge (§14), broker EXTERNAL_TAB
+(§12.4), kill-switch fallback via ASWebAuthenticationSession (§21). Where the
+spec requires these, leave a documented seam — never a stub that silently
+succeeds. Passkeys / WebAuthn (§10) are now implemented — the WebAuthn
+ceremony runs inside the hardened `WKWebView` surface with no separate Swift
+API (no contract change), and the §10.4 capability fallback is implemented
+as `SEAWebAuthnCapability` / `SEAFallbackAuthRunner` inside `SEASession`'s
+internal view-controller selection. App Attest (§16) and TLS pinning (§15)
+are **not** SEA phase-2 work at all — they are host-app/API Gateway
+responsibilities, out of this contract's scope entirely.
 
 ---
 
@@ -295,7 +301,9 @@ a guard flag ensures `onCaptured` fires at most once.
 - media capture permission requests: denied via
   `webView(_:requestMediaCapturePermissionFor:...)` → `.deny`
 - `didReceive challenge`: default system handling only. **Never** trust an
-  invalid certificate; no debug bypass. (Pinning is Phase 2, §15.)
+  invalid certificate; no debug bypass. (TLS pinning, if a deployment wants
+  it, is applied by the host app's own networking client — out of
+  `sea-core-ios` scope entirely, §15.)
 - `didFailProvisionalNavigation` / `didFail` → `SEAError.network`, retry UI
 
 Info.plist requirement for consumers, documented in the package README:

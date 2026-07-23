@@ -85,8 +85,11 @@ ambiguities" below).
 - **Config** (root/first tab) — gateway base URL, callback scheme, allowed
   domains (comma list), presentation (sheet/fullscreen), timeout, mock
   gateway toggle + mock URL. All persisted to `UserDefaults`. Also hosts
-  "Start login" and "Purge web data" (`SEASession.purgeWebData`, for testing
-  §11.1 SSO persistence vs. a clean slate).
+  "Start login", "Logout" (§11.3 — mock path does an RP-initiated Keycloak
+  logout using the `id_token` from a demo-only PKCE code exchange; real path
+  calls the gateway's logout endpoint), and "Purge web data"
+  (`SEASession.purgeWebData`, for testing §11.1 SSO persistence vs. a clean
+  slate).
 - **Result** — the last session's terminal outcome verbatim: on
   `onCaptured`, every raw callback param in a table (including `code` /
   `state` — this is a dev harness, showing them is intentional); on

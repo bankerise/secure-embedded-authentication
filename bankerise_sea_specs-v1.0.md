@@ -12,7 +12,9 @@
 
 > **v1.1 changes:** added the delivery architecture — standalone platform-native core SDKs (`sea-core-ios`, `sea-core-android`) with a thin React Native bridge (§1.3.5, §4.2–§4.8, §7), lockstep artifact versioning and release pipeline (§24), and native demo apps as the device-lab harnesses (§23.3).
 >
-> **v1.2 changes:** aligned with the Bankerise BFF architecture — the API Gateway (Spring Cloud Gateway + Spring Security) is the confidential OAuth2 client owning state, PKCE, code exchange, and token custody. §6 rewritten as gateway-anchored flow (`/authorization/start` → JSON authorize URL → custom-scheme callback capture → native code submission). No OAuth tokens ever exist on the device. Theme-parameter gating policy added (§6.2); threat model, sessions/logout, attestation enforcement point, and checklists updated accordingly.
+> **v1.2 changes:** aligned with the Bankerise BFF architecture — the API Gateway (Spring Cloud Gateway + Spring Security) is the confidential OAuth2 client owning state, PKCE, code exchange, and token custody. §6 rewritten as gateway-anchored flow (`/authorization/start` → JSON authorize URL → custom-scheme callback capture → native code submission). No OAuth tokens ever exist on the device. Theme-parameter gating policy added (§6.2); threat model, sessions/logout, and checklists updated accordingly.
+>
+> **v1.3 changes:** device integrity attestation and TLS/certificate pinning are host-app and API Gateway responsibilities, not SEA's — the Bankerise Mobile SDK already performs app attestation against the gateway independently of SEA. §15 and §16 are retained as scope pointers only; all other sections' references to attestation/pinning as SEA-implemented controls have been removed accordingly.
 
 ---
 
@@ -28,7 +30,7 @@ Bankerise currently performs mobile login through an in-app system browser (SFSa
 
 ### 1.3 Design Philosophy
 
-1. **First-party trust boundary.** The bank owns the app, the Keycloak realm, and the IdP domain. The classical argument against embedded WebViews — that a third-party app could observe user credentials — does not apply in the same way. We nevertheless treat the WebView as a semi-trusted surface and apply compensating controls (§3, §16).
+1. **First-party trust boundary.** The bank owns the app, the Keycloak realm, and the IdP domain. The classical argument against embedded WebViews — that a third-party app could observe user credentials — does not apply in the same way. We nevertheless treat the WebView as a semi-trusted surface and apply compensating controls (§3); device integrity attestation is one such control, owned by the host app/gateway (§16).
 2. **Keycloak stays authoritative.** All authentication logic (credential validation, MFA orchestration, passkey ceremonies, password reset, brokering) lives in Keycloak. The mobile layer renders, isolates, and observes — it never re-implements authentication.
 3. **The native/web seam is the security perimeter.** The single most sensitive interface in this design is the capture of the authorization callback in the WebView and its delivery to the Bankerise SDK (§6). It is specified exhaustively and everything else is forbidden by default (§13).
 4. **Escape hatches are mandatory.** Embedded WebView authentication depends on OS behavior that changes across releases. Every deployment ships with a remotely-controllable fallback to system-browser authentication (§21).
@@ -95,9 +97,9 @@ RFC 8252 (OAuth 2.0 for Native Apps) and the OAuth 2.0 Security Best Current Pra
 
 ### 3.2 Why the deviation is acceptable here
 
-1. **Reason (1) assumes an adversarial client.** SEA is a first-party component: the party that could theoretically capture credentials (the bank's app) is the same party that receives them legitimately (the bank's IdP). Moreover, under the BFF architecture (§6) the mobile client is not even an OAuth client: the confidential client with its secret, PKCE verifier, and all tokens lives server-side at the gateway — the device has strictly less to steal than in the RFC-recommended public-client browser flow. The residual risk is a *compromised* app binary, which is addressed by app attestation (§16) — a control that browser-redirect flows do not have either.
+1. **Reason (1) assumes an adversarial client.** SEA is a first-party component: the party that could theoretically capture credentials (the bank's app) is the same party that receives them legitimately (the bank's IdP). Moreover, under the BFF architecture (§6) the mobile client is not even an OAuth client: the confidential client with its secret, PKCE verifier, and all tokens lives server-side at the gateway — the device has strictly less to steal than in the RFC-recommended public-client browser flow. The residual risk is a *compromised* app binary; mitigating that residual risk (device integrity attestation, §16) is a host-app/gateway concern outside SEA's mandate.
 2. **Reason (2) is a non-goal.** We do not want browser-shared SSO for a banking app; the app-scoped persistent session (§11) is deliberate.
-3. **Reason (3) is mitigated structurally**, not cosmetically: device integrity attestation means a fake app presenting a fake login screen cannot complete session establishment at the gateway (§16), and the observability pipeline (§20) detects anomalous auth funnels.
+3. **Reason (3) is mitigated structurally**, not cosmetically: the observability pipeline (§20) detects anomalous auth funnels, and — outside SEA — device integrity attestation at the gateway means a fake app presenting a fake login screen cannot complete session establishment (§16).
 4. **Reason (4) is handled per-IdP** via the broker embed/external policy (§12.4) and the global kill switch (§21).
 
 ### 3.3 Alternatives considered
@@ -111,7 +113,7 @@ RFC 8252 (OAuth 2.0 for Native Apps) and the OAuth 2.0 Security Best Current Pra
 
 ### 3.4 Compensating controls summary
 
-Embedded WebView (this spec) + confidential-client BFF with server-side state/PKCE/token custody (§6) + navigation allowlisting (§7.3) + in-process callback capture (§6.3) + zero JS injection (§13) + app attestation gating session establishment (§16) + TLS pinning policy (§15) + screen security (§17) + remote kill switch (§21) + auth-funnel observability (§20).
+Embedded WebView (this spec) + confidential-client BFF with server-side state/PKCE/token custody (§6) + navigation allowlisting (§7.3) + in-process callback capture (§6.3) + zero JS injection (§13) + screen security (§17) + remote kill switch (§21) + auth-funnel observability (§20). Outside SEA, the host app/gateway additionally apply device integrity attestation gating session establishment (§16) and a TLS pinning policy (§15).
 
 ---
 
@@ -181,7 +183,7 @@ SEA is developed core-first (§1.3.5) and delivered as three artifacts:
 
 | Artifact | Contains | Consumers |
 |---|---|---|
-| `sea-core-ios` / `sea-core-android` | Everything in §§5–17 within SEA's mandate: WebView surface, navigation policy, §6.2 URL validation, §6.3 callback capture, datastore/session lifecycle, attestation evidence collection, screen security, telemetry emission. No RN dependency of any kind. | `sea-react-native`; fully native bank apps (direct SDK integration); future non-RN wrappers (§28) |
+| `sea-core-ios` / `sea-core-android` | Everything in §§5–17 within SEA's mandate: WebView surface, navigation policy, §6.2 URL validation, §6.3 callback capture, datastore/session lifecycle, screen security, telemetry emission. No RN dependency of any kind. Device integrity attestation and TLS pinning (§15, §16) are host-app/gateway concerns, not part of this artifact. | `sea-react-native`; fully native bank apps (direct SDK integration); future non-RN wrappers (§28) |
 | `sea-react-native` | Prop/config marshalling in, event marshalling out. **No authentication, navigation, storage, crypto, or networking logic** — enforced by lint (§24). | Bankerise RN apps |
 
 Consequences this buys, stated for the record: (a) the bank-facing security review and pen test scope (§23.2) is a pure Swift/Kotlin codebase with no Metro/JSI/node_modules in scope; (b) the platform-fragile work — passkeys, entitlements, WebView behavior — iterates in Xcode/Android Studio via native demo apps without an RN build in the loop; (c) the native SDKs are standalone deliverables for banks with existing native apps.
@@ -241,14 +243,14 @@ Baseline references: OWASP MASVS (v2), OWASP MASTG WebView guidance, OAuth 2.0 S
 
 | # | Threat | Vector | Primary mitigations |
 |---|---|---|---|
-| T1 | Credential interception by host app | Malicious/compromised app reads WebView content | First-party boundary (§3.2); zero JS injection and no DOM access (§13); attestation invalidates repackaged apps (§16) |
+| T1 | Credential interception by host app | Malicious/compromised app reads WebView content | First-party boundary (§3.2); zero JS injection and no DOM access (§13); outside SEA, host-app/gateway attestation invalidates repackaged apps (§16) |
 | T2 | WebView compromise / renderer exploit | Malicious page content exploits WebView | Strict origin allowlist — only auth + broker domains ever load (§7.3); OS/WebView min-version floor (§25); no file/content URL access (§8, §9) |
 | T3 | JavaScript injection | Any party injecting JS into auth pages | Forbidden by design; no `evaluateJavaScript` on auth origins; CI test asserts absence (§24) |
 | T4 | Malicious redirect / open redirect | Auth flow navigated off-domain | Navigation delegate deny-by-default (§7.3); Keycloak strict redirect URI validation; broker allowlist (§12.4) |
 | T5 | Authorization code theft | Code intercepted between Keycloak and gateway | Captured in-process before any dispatch (§6.3); a stolen code is unusable in isolation: exchange requires the gateway's client secret, the server-held PKCE verifier, and the pre-auth session binding held by the native client (§6.4) |
 | T6 | Session/cookie theft at rest | Extraction of persistent SSO cookie | Sandbox + FBE; `allowBackup=false`; no cloud backup of datastore; cookies `HttpOnly`+`Secure`+`SameSite` (§11.4); jailbreak/root posture (§17.3) |
-| T7 | Session theft in transit | MITM | TLS 1.3 preferred, pinning policy (§15); no cleartext; ATS / networkSecurityConfig enforced |
-| T8 | Fake login screen (phishing app) | Repackaged or impostor app mimics SEA | Attestation gates token issuance (§16); passkeys are origin-bound and unphishable (§10) |
+| T7 | Session theft in transit | MITM | TLS 1.3 preferred; no cleartext; ATS / networkSecurityConfig enforced; TLS pinning, where used, is a host-app/gateway policy (§15) |
+| T8 | Fake login screen (phishing app) | Repackaged or impostor app mimics SEA | Passkeys are origin-bound and unphishable (§10); outside SEA, host-app/gateway attestation gates token issuance (§16) |
 | T9 | Deep-link / callback hijacking | Another app registers the callback scheme | Embedded mode: the custom-scheme callback is intercepted and cancelled inside the navigation delegate — it never reaches OS dispatch (§6.3). Fallback mode: OS dispatch is possible, but T5's triple binding renders a hijacked code worthless (§10.4) |
 | T10 | Device compromise | Rooted/jailbroken device, overlay attacks, screen capture | Root/JB detection policy (§17.3); FLAG_SECURE + iOS capture posture (§17.1); `filterTouchesWhenObscured` (§17.2) |
 | T11 | Passkey phishing | Fake origin requesting credential | WebAuthn origin binding + associated-domain / asset-links verification (§10); this is *stronger* in SEA than in a generic browser |
@@ -310,7 +312,7 @@ Bankerise SDK              SEA WebView          API Gateway              Keycloa
    |<- onCaptured({code, state, ...}) --|
    |
    | GET/POST /login/oauth2/code/{registrationId}
-   |   ?code=...&state=...   (+ attestation evidence, §16)
+   |   ?code=...&state=...   (+ attestation evidence, §16 — host-app/gateway concern)
    |   (pre-auth SESSION cookie attached automatically)
    |----------------------------------------->|
    |                                          | validates state against stored
@@ -359,7 +361,7 @@ Theme parameters are **public by definition** — they appear in Keycloak, proxy
 - The native client submits the captured parameters to the gateway's `/login/oauth2/code/{registrationId}` endpoint. The pre-auth `SESSION` cookie from `/authorization/start` rides automatically in the native cookie jar — this is the binding that makes the flow coherent.
 - The gateway validates `state` against the stored `OAuth2AuthorizationRequest`, then exchanges the code at Keycloak's token endpoint as a **confidential client** with the server-held PKCE verifier, and upgrades the session to authenticated.
 - Consequence, stated for the threat model: a stolen authorization code is unusable in isolation. Exchange requires (a) the gateway's client secret, (b) the PKCE verifier that never left the server, and (c) the pre-auth session cookie held only by the genuine native client. All three are out of reach of a scheme-hijacking or code-intercepting attacker.
-- Attestation evidence (Play Integrity / App Attest, §16) is attached to `/authorization/start` and/or the code submission; the gateway is the enforcement point (§16.2).
+- Attestation evidence (Play Integrity / App Attest, §16) is attached to `/authorization/start` and/or the code submission by the Bankerise Mobile SDK, independently of SEA; the gateway is the enforcement point (§16.2). This is entirely a host-app/gateway concern — SEA neither collects nor transmits attestation evidence.
 
 ### 6.5 Session and token custody
 
@@ -403,11 +405,11 @@ Design rules:
 - Parameters that shape the authorization request (locale, `kc_idp_hint`, `prompt`, `acr_values`, theme params) are **not** SEA props — the Bankerise SDK passes them to `/authorization/start` (§6.1–§6.2). SEA receives a finished URL and validates it.
 - `onCaptured` delivers parameters, not conclusions: whether authentication *succeeded* is decided by the Bankerise SDK after the gateway call (§6.4). SEA never sees tokens or sessions.
 - `allowedDomains` from JS is intersected with a **native-side compiled allowlist**; JS can narrow it, never widen it.
-- All security-relevant configuration (callback scheme, compiled domain allowlist per env, pinning sets) is compiled into the native core, not passed from JS.
+- All security-relevant configuration (callback scheme, compiled domain allowlist per env) is compiled into the native core, not passed from JS. TLS pinning sets, if a deployment uses them, are a host-app/gateway networking-client concern (§15), not part of this compiled config.
 
 ### 7.2 Responsibilities
 
-Lifecycle management (mount → pre-warm → present → dismiss), navigation filtering delegation to native, error taxonomy surfacing (`SEAError`: `network`, `timeout`, `cancelled`, `invalid_authorize_url`, `server_error`, `webauthn_unavailable`, `kill_switched`), and accessibility wiring (§19). Gateway-side failures (state mismatch, attestation rejection, exchange errors) surface through the Bankerise SDK's code-submission call, not through SEA.
+Lifecycle management (mount → pre-warm → present → dismiss), navigation filtering delegation to native, error taxonomy surfacing (`SEAError`: `network`, `timeout`, `cancelled`, `invalid_authorize_url`, `server_error`, `webauthn_unavailable`, `kill_switched`), and accessibility wiring (§19). Gateway-side failures (state mismatch, attestation rejection outside SEA's scope, exchange errors) surface through the Bankerise SDK's code-submission call, not through SEA.
 
 ### 7.3 Navigation policy (normative)
 
@@ -460,7 +462,7 @@ SEAViewController (UIViewController)
 - `WKNavigationDelegate`:
   - `decidePolicyFor navigationAction`: callback capture (§6.3) then allowlist enforcement (§7.3).
   - `didFailProvisionalNavigation` / `didFail`: mapped to `SEAError.network` with retry UI (§18.4).
-  - TLS: `didReceive challenge` — default system validation plus pinning policy (§15). **Never** accept invalid certificates.
+  - TLS: `didReceive challenge` — default system chain validation only. **Never** accept invalid certificates. TLS pinning, if a deployment requires it, is applied by the host app's own networking client (§15), outside SEACore.
 - Safe areas: WebView constrained to safe area; header bar handles the notch; keyboard avoidance via standard content-inset adjustment.
 
 ### 8.3 Credentials, AutoFill, passkeys
@@ -510,7 +512,7 @@ WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)  // false in release
 - `WebViewClient.shouldOverrideUrlLoading`: callback-scheme capture first — the registered `callbackScheme` is intercepted and cancelled in-process (§6.3); all other `intent:`/custom schemes rejected; then allowlist (§7.3). The §6.3 POST-redirect backstop is implemented in `onPageStarted`/`doUpdateVisitedHistory`.
 - `onReceivedSslError`: **always** `handler.cancel()`. No user override, no debug bypass in release.
 - `WebChromeClient`: window creation per §7.3; permission requests denied; JS dialogs rendered natively with origin shown.
-- `networkSecurityConfig`: cleartext disabled globally; pin sets per §15.
+- `networkSecurityConfig`: cleartext disabled globally. Pin sets (§15), if a deployment requires them, are configured by the host app — outside `sea-core-android`.
 - Cookies: `CookieManager` persists by default (required for §11); `setAcceptThirdPartyCookies(webView, false)` unless a specific broker requires it (per-IdP flag, §12.4).
 
 ### 9.3 Credential Manager, autofill, passkeys
@@ -710,39 +712,19 @@ window.BankAuth = {
 
 ---
 
-## 15. Certificate and Network Security
+## 15. Certificate and Network Security (Out of SEA Scope)
 
-- TLS 1.2 minimum, 1.3 preferred; ATS fully enforced (no exceptions) / `cleartextTrafficPermitted=false`.
-- Certificate validation: full system chain validation always; `onReceivedSslError → cancel` with no override path (§9.2).
-- **Pinning decision**: pin **SPKI hashes of the issuing CA(s)** for the auth domain (not leaf pins), with a backup pin set, delivered via platform mechanisms (`networkSecurityConfig` pin-set with expiry / native TrustKit-style evaluation on iOS) — applied to both the WebView (via the native TLS challenge hooks) and the native token-exchange client.
-  - Rationale: leaf pinning has caused production outages in comparable deployments; CA-level SPKI pinning blocks rogue-CA MITM while surviving routine rotation.
-  - Rotation strategy: pins carry expiry; new pins ship ≥1 release before certificate rotation; the kill switch (§21) is the break-glass path if a pin emergency ever bricks auth.
-- No proxying of WebView traffic through app-level interceptors (§13).
+TLS/certificate pinning is **not implemented by SEA**. It is a host-app and API Gateway responsibility: the Bankerise Mobile SDK's own native networking client (the one that talks to the gateway, §6.4) is where a pinning policy, if a deployment wants one, would be applied. SEA's own WebView traffic relies on default OS system-chain TLS validation only (`didReceive challenge → default handling`, `onReceivedSslError → cancel`, no override path, §8.2/§9.2) — no pin set is compiled into or evaluated by `sea-core-ios`/`sea-core-android`.
+
+This section is retained as a scope pointer for cross-references elsewhere in this document (§3.4, §7.1, §8.2, §9.2, §26); it carries no implementation requirement for SEA.
 
 ---
 
-## 16. Device Integrity and App Attestation
+## 16. Device Integrity and App Attestation (Out of SEA Scope)
 
-This section is the load-bearing compensating control for §3.
+Device integrity attestation (Play Integrity on Android, App Attest on iOS) is **not implemented by SEA**. It is a host-app and API Gateway responsibility: the Bankerise Mobile SDK generates and attaches attestation evidence to its own calls to the gateway (`/authorization/start` and/or code submission, §6.4), and the API Gateway is the sole enforcement point. SEA has no role in attestation key generation, assertion generation, evidence collection, or evidence validation.
 
-### 16.1 Mechanisms
-
-- Android: **Play Integrity API** — standard verdict requested at SEA session start; verdict token attached to the gateway calls (§6.4).
-- iOS: **App Attest** — key generated at install, assertion generated over the token-exchange payload hash.
-
-### 16.2 Enforcement point
-
-The **API Gateway** validates attestation evidence at `/authorization/start` and/or code submission (§6.4) — both are native calls, so attaching Play Integrity / App Attest evidence is straightforward. Policy per deployment tier:
-
-| Verdict | Retail default | High-security deployments |
-|---|---|---|
-| Pass | Issue tokens | Issue tokens |
-| Soft fail (e.g., basic integrity only) | Issue + flag risk engine | Step-up MFA |
-| Hard fail (repackaged/emulator/hooked) | Deny + `attestation_failed` | Deny |
-
-### 16.3 Effect
-
-A repackaged app or a phishing look-alike can render a pixel-perfect fake login, but cannot complete session establishment (§6.4) → T1/T8 collapse from "credential compromise" to "credential disclosure without account access," which existing Keycloak controls (password reset on risk signal, passkey migration) then bound. Combined with passkey origin binding (§10.5) and the §6.4 triple binding on codes, the fake-app attack class is structurally closed.
+This is already in place in the real deployment target: the Bankerise Mobile SDK performs app attestation against the gateway independently of SEA. This section is retained as a scope pointer for cross-references elsewhere in this document (§1.3, §3.2, §3.4, §4.2, §5, §6.1, §6.4, §17.3, §18.4, §23.2, §25, §26, §27, §28); it carries no implementation requirement for SEA.
 
 ---
 
@@ -759,7 +741,7 @@ A repackaged app or a phishing look-alike can render a pixel-perfect fake login,
 
 ### 17.3 Root / jailbreak posture
 
-- Detection via the existing Bankerise integrity module (native checks + Play Integrity/App Attest corroboration per §16).
+- Detection via the existing Bankerise integrity module (native root/jailbreak checks). Play Integrity/App Attest corroboration (§16) is performed by the host app/gateway, outside SEA.
 - Policy is deployment-configurable: `BLOCK` (default for high-security banks) | `WARN_AND_FLAG` (risk-engine signal) — never silent-allow.
 
 ---
@@ -804,7 +786,7 @@ Skeleton/branded spinner during initial load and during silent SSO re-auth (§11
 
 ### 18.4 Failure states
 
-Native (not web) error surfaces for: offline, DNS/TLS failure, timeout (`timeoutMs`), server 5xx, gateway-reported attestation rejection, and kill-switch fallback engagement — each with retry or fallback actions and localized copy (ar/fr/en).
+Native (not web) error surfaces for: offline, DNS/TLS failure, timeout (`timeoutMs`), server 5xx, and kill-switch fallback engagement — each with retry or fallback actions and localized copy (ar/fr/en). Gateway-reported attestation rejection surfaces through the Bankerise SDK's own error handling, not through SEA (§16).
 
 ---
 
@@ -877,8 +859,7 @@ Login (password, passkey, passkey-fallback path), silent SSO after restart, SSO 
 - Static CI checks: no `evaluateJavaScript`/user scripts targeting auth origins; no `@JavascriptInterface` beyond §14; forbidden-list (§13) linting.
 - Navigation fuzzing: malicious redirect corpus (open-redirect attempts, `javascript:`/`intent:`/custom schemes, look-alike domains, userinfo-URL tricks) — all must be blocked and telemetered.
 - Capture/flow tests — SEA side: authorize-URL origin spoof rejected (§6.2); callback scheme intercepted in-process with instrumented proof of no OS dispatch; POST-redirect backstop exercised across WebView versions; error-shaped callbacks delivered. Gateway side: state mismatch, code replay (second submission must fail), PKCE downgrade, expired code, submission without pre-auth session cookie rejected (§6.4).
-- TLS: pin validation, invalid/self-signed/rotated-cert behavior, downgrade attempts.
-- Attestation: repackaged build and emulator must fail exchange per §16.2 policy.
+- TLS: invalid/self-signed/rotated-cert behavior, downgrade attempts (pin validation, where the host app pins, is out of SEA's test surface — §15).
 - Capture/overlay: FLAG_SECURE verified, tapjacking test with overlay app.
 - Pen test scope note for bank security teams: SEA + Keycloak mobile realm + gateway authorization endpoints (`/authorization/start`, code submission, logout), with §3 as the framing document.
 
@@ -908,7 +889,6 @@ Harnesses: the native demo apps (`demo-ios`, `demo-android`, §4.4) are the prim
 | Embedded WebView login (no passkeys) | TBD (spike) | TBD (spike) | n/a — baseline |
 | Passkeys in embedded WebView | Validated on **iOS 26.5** (Simulator); registration + usernameless auth work embedded. Real floor TBD — needs older-OS device-lab run | TBD — WebView provider version with Credential Manager routing | §10.4 fallback ceremony |
 | Conditional passkey UI (autofill suggestions) | **Not used** on iOS (§10.2) — deprecated on Keycloak 26.6 + unreliable in WKWebView; passkey-first delivered as explicit CTA instead | TBD | Modal ceremony only |
-| Play Integrity / App Attest | App Attest floor | Play services floor | §16.2 soft-fail policy |
 
 > The spike deliverable is this table with exact versions plus the measured embedded-passkey success rate per OS version from a device-lab run. §21 thresholds are then set from real data.
 >
@@ -922,17 +902,20 @@ Harnesses: the native demo apps (`demo-ios`, `demo-android`, §4.4) are the prim
 
 - [ ] Associated Domains entitlement: `webcredentials:auth.bank.com` (per environment)
 - [ ] `WKAppBoundDomains` in Info.plist: auth + approved broker domains
-- [ ] App Attest capability + backend validation configured
 - [ ] ATS: no exceptions in release
 - [ ] Backup exclusion of datastore paths verified
 
 ### Android
 
 - [ ] `assetlinks.json` deployed and validated (package + all release signing certs, incl. Play App Signing key)
-- [ ] `networkSecurityConfig`: cleartext off, pin sets with expiry
+- [ ] `networkSecurityConfig`: cleartext off
 - [ ] `allowBackup=false` + `dataExtractionRules` verified
-- [ ] Play Integrity enabled + backend validation configured
 - [ ] Minimum WebView provider floor enforced (in-app check → §21 fallback below floor)
+
+### Host app / API Gateway (out of SEA scope, tracked here for deployment completeness)
+
+- [ ] App Attest (iOS) / Play Integrity (Android) capability + backend validation configured, per §16
+- [ ] TLS pin sets with expiry configured on the host app's networking client, per §15
 
 ### Keycloak
 
@@ -950,7 +933,7 @@ Harnesses: the native demo apps (`demo-ios`, `demo-android`, §4.4) are the prim
 - [ ] `authMode` defaulting: absent → `EMBEDDED`; `SYSTEM_BROWSER` verified to launch the classic in-app-browser flow end-to-end (§21)
 - [ ] Customized `OAuth2AuthorizationRequestResolver` with the §6.2 tier-3 parameter gate (pattern, reserved set, caps, telemetry on rejection)
 - [ ] Code-submission endpoint validating state against the stored request; confidential exchange with server-held verifier
-- [ ] Attestation validation wired per §16.2 policy tiers
+- [ ] Attestation validation wired per §16.2 policy tiers (host-app/gateway concern, out of SEA scope)
 - [ ] Logout endpoint performing Spring Session invalidation + RP-initiated OIDC logout (§11.3)
 - [ ] Back-channel logout URI registered in Keycloak and session-invalidation path tested (§11.3)
 - [ ] Broker per-IdP policy config delivery (§12.4) wired and tested
@@ -960,8 +943,8 @@ Harnesses: the native demo apps (`demo-ios`, `demo-android`, §4.4) are the prim
 ## 27. Regulatory and Audit Notes
 
 - §3 is the canonical answer to RFC 8252 findings; attach it to any bank security questionnaire.
-- MASVS mapping: this spec addresses MASVS-AUTH, MASVS-NETWORK, MASVS-PLATFORM (WebView), MASVS-STORAGE (tokens/cookies), MASVS-RESILIENCE (§16, §17). A full control-by-control traceability sheet is produced per deployment.
-- Where PSD2/SCA or GCC central-bank e-banking guidelines apply: SCA is enforced by Keycloak flows (inherence via passkey user verification / biometric platform authenticator; possession via device-bound passkey + attestation); dynamic linking, where required, is a Keycloak custom-flow concern (§12.3), out of SEA scope but compatible.
+- MASVS mapping: this spec addresses MASVS-AUTH, MASVS-NETWORK, MASVS-PLATFORM (WebView), MASVS-STORAGE (tokens/cookies), MASVS-RESILIENCE (§17; §16 resilience controls are host-app/gateway-owned). A full control-by-control traceability sheet is produced per deployment.
+- Where PSD2/SCA or GCC central-bank e-banking guidelines apply: SCA is enforced by Keycloak flows (inherence via passkey user verification / biometric platform authenticator; possession via device-bound passkey, with device attestation as a host-app/gateway-owned reinforcement, §16); dynamic linking, where required, is a Keycloak custom-flow concern (§12.3), out of SEA scope but compatible.
 - Data residency: SEA introduces no new data flows; all traffic terminates at the bank's Keycloak.
 
 ---
@@ -972,7 +955,7 @@ Harnesses: the native demo apps (`demo-ios`, `demo-android`, §4.4) are the prim
 - **Device binding** of sessions: DPoP-bound tokens or mTLS at the token endpoint, keyed in Secure Enclave/StrongBox — natural hardening layer on §6.
 - **App2app national eID** brokering (UAE Pass, PACI): extends §12.4 with a third mode (`APP2APP`) using verified app links back into the flow.
 - **Continuous authentication** signals (behavioral, device posture) feeding the bank risk engine at token refresh.
-- **Voice authentication integration**: Bankerise Voice Trust Engine (speaker verification + anti-spoofing) as a Keycloak authenticator for voice-channel step-up, sharing the §16 attestation substrate.
+- **Voice authentication integration**: Bankerise Voice Trust Engine (speaker verification + anti-spoofing) as a Keycloak authenticator for voice-channel step-up.
 - **AI risk engine integration**: §20 event stream as a real-time feature source for adaptive authentication policies.
 - **Additional wrappers over the same cores**: a Flutter plugin, and direct native-SDK distribution to banks with fully native apps — the cores are already the deliverable (§4.2), so this is a packaging and licensing exercise, not an engineering one.
 

@@ -23,8 +23,9 @@ docs/                      Spec + API contract
 ```
 
 `sea-core-android` is not started yet — the build is core-first and
-iOS-first per §4.8. `sea-react-native` is scaffolded and validated against
-`sea-core-ios` in dev mode (local CocoaPods `:path`, §4.5); it has no
+iOS-first per §4.8. `sea-react-native` is implemented and validated against
+`sea-core-ios` in dev mode (local CocoaPods `:path`, §4.5), including its
+telemetry/purge-web-data module and demo-rn's logout flow; it has no
 Android side to bridge to until `sea-core-android` exists.
 
 ## Current status — Phase 1, iOS
@@ -35,27 +36,32 @@ Implemented:
 - §6.3 in-process callback capture (+ POST-redirect backstop)
 - §7.3 deny-by-default navigation policy
 - §8.2 hardened `WKWebView` configuration
+- §10 passkeys/WebAuthn (embedded ceremonies) + §10.4 capability fallback
+- §11.3 RP-initiated logout (`demo-ios`, `demo-rn`)
 - §17.1 iOS screen-security posture
 - §18.1 sheet presentation, native header, native failure states
 - §20.1 telemetry event emission with §20.2 redaction
+- §4.2/§7 React Native Fabric bridge (`sea-react-native`) + telemetry module
 
-**Not implemented, deliberately.** These are declared seams, not stubs — nothing
+**Not yet implemented.** These are declared seams, not stubs — nothing
 silently succeeds in their place:
 
 | Area | Spec | Status |
 |---|---|---|
-| Passkeys / WebAuthn | §10 | Out of scope this phase, by decision |
-| App Attest | §16 | Phase 2 |
-| TLS pinning | §15 | Phase 2 — system chain validation is enforced meanwhile |
 | JS bridge | §14 | Not needed; default is no bridge |
 | Broker `EXTERNAL_TAB` | §12.4 | Phase 2 |
-| Kill-switch fallback | §21 | Phase 2 |
+| Kill-switch fallback (gateway `authMode`) | §21 | Phase 2 — not yet branched on in either demo app |
 | Android core | §4.2 | Not started |
-| RN bridge (iOS side) | §4.2, §7 | Scaffolded, validated against `sea-core-ios` — see `infra/README.md` |
 
-Because attestation (§16) is the load-bearing compensating control for the §3
-RFC-8252 deviation, **this phase is not a security-reviewable configuration.**
-It is a functional harness for the §6 handoff perimeter.
+**App Attest (§16) and TLS/certificate pinning (§15) are explicitly out of
+SEA's scope**, not a SEA phase-2 item — they are host-app/API Gateway
+responsibilities. The Bankerise Mobile SDK already performs app attestation
+against the gateway independently of SEA.
+
+This phase covers the §6 handoff perimeter, passkeys, and the RN bridge. A
+full security review additionally requires the host app/gateway's
+attestation and pinning configuration (§15, §16) and the still-pending
+broker/kill-switch items above.
 
 ## Getting started
 
