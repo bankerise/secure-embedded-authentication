@@ -5,6 +5,9 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
+source 'https://cdn.cocoapods.org/'
+source 'ssh://git@gitlab.proxym-group.net:3022/bankerise-platform/bankerise-sea-podspec.git'
+
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
@@ -17,10 +20,10 @@ end
 target 'demo_rn' do
   config = use_native_modules!
 
-  # Dev-mode local-path consumption of the SEA core (spec §4.5). sea-react-native
-  # is autolinked via the workspace dependency in package.json; its podspec
-  # declares `s.dependency "SEACore"`, which this local :path pod satisfies.
-  pod 'SEACore', :path => '../../../packages/sea-core-ios'
+  # sea-react-native is autolinked via the workspace dependency in
+  # package.json; its podspec declares `s.dependency "SEACore"`, satisfied
+  # here by the versioned pod resolved from the private bankerise-specs repo.
+  pod 'SEACore', '~> 0.0.1'
 
   use_react_native!(
     :path => config[:reactNativePath],
