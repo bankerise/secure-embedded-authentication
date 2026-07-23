@@ -1,0 +1,35 @@
+publish-sea-core-ios-pod:
+  stage: deploy
+  tags:
+    - macos # adjust to whatever tag your macOS/Xcode runner uses
+  rules:
+    # Fires only on tags shaped like sea-core-ios/0.0.1
+    - if: '$CI_COMMIT_TAG =~ /^sea-core-ios\/[0-9]+\.[0-9]+\.[0-9]+$/'
+  variables:
+    SPECS_REPO_SSH: "ssh://git@gitlab.proxym-group.net:3022/bankerise-platform/bankerise-sea-podspec.git"
+  before_script:
+    # SSH_DEPLOY_KEY: masked/protected CI/CD variable holding a private key
+    # with push access to bankerise-sea-podspec (Settings > CI/CD > Variables).
+    - mkdir -p ~/.ssh
+    - echo "$SSH_DEPLOY_KEY" > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - ssh-keyscan -p 3022 gitlab.proxym-group.net >> ~/.ssh/known_hosts
+    - pod repo add bankerise-specs "$SPECS_REPO_SSH"
+  script:
+    - pod repo push bankerise-specs packages/sea-core-ios/SEACore.podspec --allow-warnings
+
+publish-sea-react-native-npm:
+  stage: deploy
+  image: node:22 # adjust to your runner setup if this isn't a docker executor
+  rules:
+    # Fires only on tags shaped like sea-react-native/0.0.1
+    - if: '$CI_COMMIT_TAG =~ /^sea-react-native\/[0-9]+\.[0-9]+\.[0-9]+$/'
+  before_script:
+    # NPM_AUTH_TOKEN: masked/protected CI/CD variable holding the Nexus npm
+    # auth token for the npm-private repo (Settings > CI/CD > Variables).
+    - echo "//repos.proxym-group.net/repository/npm-private/:_authToken=${NPM_AUTH_TOKEN}" >> ~/.npmrc
+    - echo "@bankerise-platform:registry=https://repos.proxym-group.net/repository/npm-private/" >> ~/.npmrc
+    - corepack enable && yarn install --immutable
+  script:
+    - cd packages/sea-react-native
+    - npm publish

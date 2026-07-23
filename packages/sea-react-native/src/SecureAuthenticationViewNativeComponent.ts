@@ -4,7 +4,7 @@ import type {
   Int32,
   Double,
   WithDefault,
-} from 'react-native/Libraries/Types/CodegenTypes';
+} from 'react-native/Libraries/Types/CodegenTypesNamespace';
 import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
 
 // Mirrors SEAAppearance (packages/sea-core-ios/Sources/SEACore/SEAAppearance.swift).

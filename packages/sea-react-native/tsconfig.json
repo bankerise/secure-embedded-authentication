@@ -6,10 +6,7 @@
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
-    "customConditions": [
-      "sea-react-native-source",
-      "react-native-strict-api"
-    ],
+    "customConditions": ["sea-react-native-source"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",

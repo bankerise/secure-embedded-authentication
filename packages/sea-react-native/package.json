@@ -1,6 +1,6 @@
 {
-  "name": "sea-react-native",
-  "version": "0.1.0",
+  "name": "@bankerise-platform/sea-react-native",
+  "version": "0.0.1",
   "description": "Bankerise SEA React Native bridge (Fabric)",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -42,16 +42,17 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bankerise/bankerise-sea.git"
+    "url": "git+ssh://git@gitlab.proxym-group.net:3022/bankerise-platform/bankerise-sea.git"
   },
-  "author": "Bankerise <dev@bankerise.example> (https://github.com/bankerise)",
-  "license": "MIT",
+  "author": "Bankerise",
+  "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/bankerise/bankerise-sea/issues"
+    "url": "https://gitlab.proxym-group.net/bankerise-platform/bankerise-sea/-/issues"
   },
-  "homepage": "https://github.com/bankerise/bankerise-sea#readme",
+  "homepage": "https://gitlab.proxym-group.net/bankerise-platform/bankerise-sea#readme",
   "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://repos.proxym-group.net/repository/npm-private/",
+    "access": "restricted"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^21.0.2",
