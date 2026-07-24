@@ -1824,7 +1824,7 @@ PODS:
     - ReactNativeDependencies
   - ReactNativeDependencies (0.86.0)
   - SEACore (0.0.1)
-  - SeaReactNative (0.1.0):
+  - SeaReactNative (0.0.1):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -1930,7 +1930,7 @@ DEPENDENCIES:
   - Yoga (from `../../../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
-  "ssh://git@gitlab.proxym-group.net:3022/bankerise-platform/bankerise-sea-podspec.git":
+  https://github.com/bankerise/secure-embedded-authentication.git:
     - SEACore
 
 EXTERNAL SOURCES:
@@ -2163,10 +2163,10 @@ SPEC CHECKSUMS:
   ReactCodegen: f50858f90b4f4fe018639d415b76319ea889eab0
   ReactCommon: 4d01bfb533b93a2103329dfefc74db6a9e272888
   ReactNativeDependencies: fa0a54b3f5319ae0e3b9aff32bfee7a424b88e66
-  SEACore: f829d255670ada5672bb04655c33fdf55d2ffe77
-  SeaReactNative: e7aee6c860376929ec228130ede04a47ea97c428
+  SEACore: 89c3340da86e7a88c7b71c61772d48a3e145e913
+  SeaReactNative: 6d865ce45c93d17b2e1bd4217f0914249c0e4e39
   Yoga: 94172d87dd5d83fc929bf1ee53121b5d4490b5f2
 
-PODFILE CHECKSUM: e665f955bc19dc78bae2dbbc2c38e1bf90e34726
+PODFILE CHECKSUM: 735c07fa4988e2b25d8b783e6044a5c64e5be40b
 
 COCOAPODS: 1.15.2
