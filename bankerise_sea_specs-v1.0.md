@@ -559,11 +559,18 @@ Passkey registration and authentication are **Keycloak-driven WebAuthn ceremonie
 If the WebView environment cannot perform WebAuthn (capability probe at SEA startup + runtime failure detection):
 
 1. SEA detects the condition (`webauthn_unavailable`) — either pre-flight (OS/WebView version below floor) or live (ceremony JS error surfaced via Keycloak's error redirect).
-2. The **entire login attempt** is handed to the system path: `ASWebAuthenticationSession(url:callbackURLScheme:)` (iOS) / Custom Tab with an intent filter for the callback scheme (Android), using the same gateway-issued authorize URL. This path is RFC-8252-clean by definition.
+2. The **entire login attempt** is handed to the system path: `ASWebAuthenticationSession(url:callbackURLScheme:)` (iOS) / Android runner selects between two Custom Tabs mechanisms (Android, detailed below), using the same gateway-issued authorize URL. This path is RFC-8252-clean by definition.
 3. The captured callback parameters flow into the same `onCaptured` contract (§6.3) and the same gateway submission (§6.4). Note: on this path the custom scheme *is* OS-dispatched, exposing the T9 hijack surface — accepted because the §6.4 triple binding (client secret + server-held verifier + native pre-auth session) renders a hijacked code worthless.
 4. Telemetry records the fallback (`AUTH_WEBAUTHN_FALLBACK`) so rollout dashboards show the embedded-vs-fallback ratio per OS version.
 
 This is the same machinery as the kill switch (§21) applied per-attempt.
+
+> **Android runner selection (normative): Auth Tab preferred, Custom Tabs fallback.**
+> `AuthTabIntent` (`androidx.browser.auth`, package `androidx.browser:browser:1.9.0`, stable — the experimental annotation was dropped in that release) is the Android analog of `ASWebAuthenticationSession`: it captures the callback redirect itself and returns it as an activity result, instead of relying on OS intent-dispatch of the custom scheme back into the app. Use it when available; otherwise degrade to plain Custom Tabs + an intent filter for the callback scheme (the mechanism previously documented as the sole Android path).
+> - **Availability is a browser capability, not an Android OS version gate.** `AuthTabIntent` requires the handling browser to support it — Chrome 137+ is the current minimum; other Chromium-based browsers may follow. A device can be on the latest Android release and still lack support (old Chrome, or a non-Chrome default browser such as Samsung Internet or Firefox), while an older Android OS with a current Chrome supports it fine. `androidx.browser` itself only floors at API 23, which is not the binding constraint.
+> - **Detection must happen at runtime**, not via any static OS-version check: resolve the target browser package (`CustomTabsClient.getPackageName`), then call `CustomTabsClient#isAuthTabSupported()` against it. Branch to `AuthTabIntent` on `true`, else the existing Custom Tabs + intent-filter path.
+> - Both branches resolve through the same `onCaptured`/`onCancelled`/`onError` contract and the same §6.4 submission — this is a runner-internal implementation detail, invisible to the §4.3 API contract and to `sea-react-native`'s bridge surface.
+> - Not yet implemented — `sea-core-android` doesn't exist in this repo yet. Recorded here so the decision is pinned before that workstream starts.
 
 > **Implementation status (v1 spike — iOS):**
 > - The pre-flight probe (`SEAWebAuthnCapability`, step 1) is an OS-version floor comparison; the fallback path (`SEAFallbackEntryViewController` → `SEAFallbackAuthRunner` → `ASWebAuthenticationSession`) is wired and validated end-to-end, resolving through the same `onCaptured`/`onCancelled`/`onError` contract as the embedded path and emitting `AUTH_WEBAUTHN_FALLBACK`. The throwaway entry view controller **self-dismisses after any terminal outcome** (mirroring `SEAAuthViewController.dismissSelf`), so the fallback leaves no blank anchor on screen.
