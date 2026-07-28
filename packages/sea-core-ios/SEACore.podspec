@@ -5,7 +5,7 @@ Pod::Spec.new do |s|
   s.version      = '0.0.1'
   s.summary      = 'Bankerise SEA — hardened embedded WebView auth core (iOS).'
   s.homepage     = 'https://github.com/bankerise/secure-embedded-authentication'
-  s.license      = { :type => 'Proprietary' }
+  s.license      = { :type => 'Apache-2.0', :file => 'LICENSE' }
   s.author       = 'Bankerise'
   s.platform     = :ios, '15.0'
   s.swift_version = '5.9'

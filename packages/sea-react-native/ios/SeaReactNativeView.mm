@@ -75,6 +75,8 @@ using namespace facebook::react;
   NSString *authorizeUrl = RCTNSStringFromString(viewProps.authorizeUrl);
   NSString *presentation =
       viewProps.presentation == SeaReactNativeViewPresentation::Fullscreen ? @"fullscreen" : @"sheet";
+  NSString *authMode =
+      viewProps.authMode == SeaReactNativeViewAuthMode::NativeBrowser ? @"nativeBrowser" : @"embedded";
 
   NSMutableArray<NSString *> *allowedDomains = [NSMutableArray new];
   for (const auto &domain : viewProps.allowedDomains) {
@@ -106,6 +108,7 @@ using namespace facebook::react;
   _presentedViewController = [SEABridgePresenter startFromAnchor:_view
                                                      authorizeUrl:authorizeUrl
                                                      presentation:presentation
+                                                         authMode:authMode
                                                    allowedDomains:allowedDomains
                                                         timeoutMs:viewProps.timeoutMs
                                                  headerBackground:headerBackground

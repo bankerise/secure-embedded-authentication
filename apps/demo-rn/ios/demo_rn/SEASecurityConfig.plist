@@ -8,7 +8,7 @@
 	<array>
 		<string>auth.bank.local</string>
 		<string>localhost</string>
-		<string>platform-keycloak.pres.proxym-it.net</string>
+		<string>keycloak.example.com</string>
 	</array>
 </dict>
 </plist>

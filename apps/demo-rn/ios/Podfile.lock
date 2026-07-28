@@ -1926,7 +1926,7 @@ DEPENDENCIES:
   - ReactCommon/turbomodule/core (from `../../../node_modules/react-native/ReactCommon`)
   - ReactNativeDependencies (from `../../../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
   - SEACore (~> 0.0.1)
-  - SeaReactNative (from `../../../node_modules/sea-react-native`)
+  - "SeaReactNative (from `../../../node_modules/@bankerise-platform/sea-react-native`)"
   - Yoga (from `../../../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -2084,7 +2084,7 @@ EXTERNAL SOURCES:
   ReactNativeDependencies:
     :podspec: "../../../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec"
   SeaReactNative:
-    :path: "../../../node_modules/sea-react-native"
+    :path: "../../../node_modules/@bankerise-platform/sea-react-native"
   Yoga:
     :path: "../../../node_modules/react-native/ReactCommon/yoga"
 
@@ -2164,7 +2164,7 @@ SPEC CHECKSUMS:
   ReactCommon: 4d01bfb533b93a2103329dfefc74db6a9e272888
   ReactNativeDependencies: fa0a54b3f5319ae0e3b9aff32bfee7a424b88e66
   SEACore: 89c3340da86e7a88c7b71c61772d48a3e145e913
-  SeaReactNative: 6d865ce45c93d17b2e1bd4217f0914249c0e4e39
+  SeaReactNative: 3bca3e55d1d95f4869f035b16634dd0ff3c3b96a
   Yoga: 94172d87dd5d83fc929bf1ee53121b5d4490b5f2
 
 PODFILE CHECKSUM: 735c07fa4988e2b25d8b783e6044a5c64e5be40b

@@ -9,7 +9,11 @@
  */
 import React, { useCallback, useState } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
-import { purgeWebData, SecureAuthenticationView } from 'sea-react-native';
+import {
+  purgeWebData,
+  SecureAuthenticationView,
+  subscribeToTelemetry,
+} from '@bankerise-platform/sea-react-native';
 import { startAuthorization as startMockAuthorization } from './src/mockGateway';
 import { startAuthorization as startRealAuthorization } from './src/gateway';
 import { allowedDomainsArray, DEFAULT_SETTINGS, type Settings } from './src/settings';
@@ -17,7 +21,7 @@ import type { Result } from './src/types';
 import { useSessionLogout } from './src/useSessionLogout';
 import { ConfigScreen } from './src/screens/ConfigScreen';
 import { ResultScreen } from './src/screens/ResultScreen';
-import { TelemetryScreen } from './src/screens/TelemetryScreen';
+import { TelemetryScreen, type TelemetryEntry } from './src/screens/TelemetryScreen';
 import { TabBar, type TabKey } from './src/TabBar';
 
 function App(): React.JSX.Element {
@@ -28,7 +32,22 @@ function App(): React.JSX.Element {
   const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
   const [authorizeUrl, setAuthorizeUrl] = useState<string | null>(null);
   const [result, setResult] = useState<Result>({ kind: 'idle' });
+  const [telemetryEntries, setTelemetryEntries] = useState<TelemetryEntry[]>([]);
+  const nextTelemetryId = React.useRef(0);
   const session = useSessionLogout(settings);
+
+  // Subscribed for the app's whole lifetime (not just while the Telemetry
+  // tab is mounted) — SeaTelemetryEmitter drops events fired while no JS
+  // listener is subscribed, so a per-screen subscription misses everything
+  // that fires before the user navigates to that tab.
+  React.useEffect(() => {
+    const unsubscribe = subscribeToTelemetry((event) => {
+      nextTelemetryId.current += 1;
+      const id = String(nextTelemetryId.current);
+      setTelemetryEntries((prev) => [...prev, { ...event, id }]);
+    });
+    return unsubscribe;
+  }, []);
 
   const onChangeSettings = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => ({ ...prev, ...patch }));
@@ -83,7 +102,9 @@ function App(): React.JSX.Element {
       {activeTab === 'result' && (
         <ResultScreen result={result} onClear={() => setResult({ kind: 'idle' })} />
       )}
-      {activeTab === 'telemetry' && <TelemetryScreen />}
+      {activeTab === 'telemetry' && (
+        <TelemetryScreen entries={telemetryEntries} onClear={() => setTelemetryEntries([])} />
+      )}
 
       <TabBar active={activeTab} onChange={setActiveTab} />
 
@@ -91,6 +112,7 @@ function App(): React.JSX.Element {
         <SecureAuthenticationView
           authorizeUrl={authorizeUrl}
           presentation={settings.presentation}
+          authMode={settings.authMode}
           allowedDomains={allowedDomainsArray(settings)}
           timeoutMs={settings.timeoutMs}
           onCaptured={(params) => {

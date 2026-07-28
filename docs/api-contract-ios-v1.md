@@ -19,7 +19,10 @@ succeeds. Passkeys / WebAuthn (§10) are now implemented — the WebAuthn
 ceremony runs inside the hardened `WKWebView` surface with no separate Swift
 API (no contract change), and the §10.4 capability fallback is implemented
 as `SEAWebAuthnCapability` / `SEAFallbackAuthRunner` inside `SEASession`'s
-internal view-controller selection. App Attest (§16) and TLS pinning (§15)
+internal view-controller selection. The same fallback runner is also
+reachable directly via `SEAConfig.authMode = .nativeBrowser` — an explicit
+caller choice to skip the embedded path entirely, independent of the
+capability probe (see §3.1). App Attest (§16) and TLS pinning (§15)
 are **not** SEA phase-2 work at all — they are host-app/API Gateway
 responsibilities, out of this contract's scope entirely.
 
@@ -59,6 +62,21 @@ public enum SEAPresentation { case sheet, fullscreen }   // sheet is default
 
 Init is memberwise-public with defaults for `presentation` (.sheet),
 `appearance` (.default), `timeoutMs` (120_000), `allowedDomains` ([]).
+
+Note: `capturePolicy` (§8) and `authMode` (§10.4) are not enumerated in the
+code block above but are part of the type — both are additive fields with
+defaults, so they don't change the shape callers must supply.
+
+```swift
+public enum SEAAuthMode { case embedded, nativeBrowser }   // embedded is default
+```
+
+`authMode = .nativeBrowser` skips the embedded `WKWebView` path entirely and
+hands the whole login attempt to `ASWebAuthenticationSession` up front — the
+same runner the §10.4 capability-probe fallback uses, entered explicitly
+instead. Resolves through the exact same `SEASession.Callbacks` contract as
+`.embedded`; not to be confused with the host-SDK-level `SYSTEM_BROWSER`
+authMode (spec §6), which bypasses SEACore entirely.
 
 Note: `SEAConfig` does **not** carry a `callbackScheme`. The callback scheme
 is a single app-wide value owned by `SEAEnvironment` (§3.3) — it is not
@@ -124,7 +142,7 @@ harness — never inside `sea-core-ios` itself):
 <string>bkrmob</string>
 <key>AuthDomains</key>
 <array>
-    <string>platform-keycloak.pres.proxym-it.net</string>
+    <string>keycloak.example.com</string>
 </array>
 ```
 

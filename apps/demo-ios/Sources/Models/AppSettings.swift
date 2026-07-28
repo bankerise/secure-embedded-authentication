@@ -24,6 +24,7 @@ final class AppSettings: ObservableObject {
         static let gatewayBaseURL = "sea.demo.gatewayBaseURL"
         static let allowedDomains = "sea.demo.allowedDomains"
         static let presentation = "sea.demo.presentation"
+        static let authMode = "sea.demo.authMode"
         static let timeoutMs = "sea.demo.timeoutMs"
         static let useMockGateway = "sea.demo.useMockGateway"
         static let mockRedirectURL = "sea.demo.mockRedirectURL"
@@ -34,8 +35,9 @@ final class AppSettings: ObservableObject {
         static let gatewayBaseURL = "http://localhost:8080"
         // Narrowing list handed to SEACore; also reused by the fuzz screen so
         // both surfaces exercise the same effective allowlist.
-        static let allowedDomains = "auth.bank.local,localhost,platform-keycloak.pres.proxym-it.net"
+        static let allowedDomains = "auth.bank.local,localhost,keycloak.example.com"
         static let presentation = "sheet"
+        static let authMode = "embedded"
         static let timeoutMs = 120_000
         static let useMockGateway = true
         // A plausible local-Keycloak authorize URL. Must be https + a host in
@@ -89,6 +91,18 @@ final class AppSettings: ObservableObject {
             defaults.set(raw, forKey: Keys.presentation)
         }
     }
+    @Published var authMode: SEAAuthMode {
+        didSet {
+            // Same rationale as `presentation` above: avoid relying on
+            // Equatable conformance for a contract type.
+            let raw: String
+            switch authMode {
+            case .embedded: raw = "embedded"
+            case .nativeBrowser: raw = "nativeBrowser"
+            }
+            defaults.set(raw, forKey: Keys.authMode)
+        }
+    }
     @Published var timeoutMs: Int {
         didSet { defaults.set(timeoutMs, forKey: Keys.timeoutMs) }
     }
@@ -104,6 +118,8 @@ final class AppSettings: ObservableObject {
         allowedDomains = defaults.string(forKey: Keys.allowedDomains) ?? Defaults.allowedDomains
         let presentationRaw = defaults.string(forKey: Keys.presentation) ?? Defaults.presentation
         presentation = presentationRaw == "fullscreen" ? .fullscreen : .sheet
+        let authModeRaw = defaults.string(forKey: Keys.authMode) ?? Defaults.authMode
+        authMode = authModeRaw == "nativeBrowser" ? .nativeBrowser : .embedded
         let storedTimeout = defaults.object(forKey: Keys.timeoutMs) as? Int
         timeoutMs = storedTimeout ?? Defaults.timeoutMs
         if defaults.object(forKey: Keys.useMockGateway) != nil {

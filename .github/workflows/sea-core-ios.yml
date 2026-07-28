@@ -1,0 +1,37 @@
+name: sea-core-ios pod release gate
+
+on:
+  push:
+    tags:
+      - 'sea-core-ios/*.*.*'
+
+jobs:
+  validate-podspec:
+    # CocoaPods and Ruby ship preinstalled on GitHub's macOS runners.
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#sea-core-ios/}" >> "$GITHUB_OUTPUT"
+
+      # The Specs index lives in this same repo (Specs/SEACore/<version>/),
+      # resolved directly via the Podfile's `source` pointing at this repo's
+      # git URL — no separate Specs repo, no push step, no deploy key. This
+      # job is a release gate: it fails the tag if the committed Specs/
+      # entry doesn't match what the podspec actually generates, or if the
+      # podspec doesn't lint.
+      - name: Regenerate and diff Specs index entry
+        env:
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+        run: |
+          pod ipc spec packages/sea-core-ios/SEACore.podspec > /tmp/generated.podspec.json
+          diff -u "Specs/SEACore/${{ steps.version.outputs.version }}/SEACore.podspec.json" /tmp/generated.podspec.json
+
+      - name: Lint podspec
+        env:
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+        run: pod spec lint packages/sea-core-ios/SEACore.podspec --allow-warnings

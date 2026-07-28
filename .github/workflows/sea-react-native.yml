@@ -1,0 +1,26 @@
+name: sea-react-native npm publish
+
+on:
+  push:
+    tags:
+      - 'sea-react-native/*.*.*'
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: corepack enable && yarn install --immutable
+
+      - name: Publish
+        working-directory: packages/sea-react-native
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

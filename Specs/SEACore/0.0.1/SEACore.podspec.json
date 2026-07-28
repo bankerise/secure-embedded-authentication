@@ -4,7 +4,8 @@
   "summary": "Bankerise SEA — hardened embedded WebView auth core (iOS).",
   "homepage": "https://github.com/bankerise/secure-embedded-authentication",
   "license": {
-    "type": "Proprietary"
+    "type": "Apache-2.0",
+    "file": "LICENSE"
   },
   "authors": "Bankerise",
   "platforms": {

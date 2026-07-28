@@ -10,9 +10,10 @@
 
 	This demo/test harness app is permanently a test harness, so listing
 	both the local-infra Keycloak domains (auth.bank.local, localhost) and
-	the live showcase Keycloak domain (platform-keycloak.pres.proxym-it.net)
-	together in one list is correct for it specifically — there is no
-	release build of this app that should ever ship to a real user.
+	a second, remotely-hosted Keycloak domain (keycloak.example.com — a
+	placeholder; substitute your own integration-testing host) together in
+	one list is correct for it specifically — there is no release build of
+	this app that should ever ship to a real user.
 
 	A REAL bank's production app would NOT do this: it would bundle only
 	its own real domain(s) here. If it wants a dev/staging/prod split, that
@@ -26,7 +27,7 @@
 	<array>
 		<string>auth.bank.local</string>
 		<string>localhost</string>
-		<string>platform-keycloak.pres.proxym-it.net</string>
+		<string>keycloak.example.com</string>
 	</array>
 </dict>
 </plist>

@@ -47,6 +47,13 @@ export interface NativeProps extends ViewProps {
   authorizeUrl: string;
 
   presentation?: WithDefault<'sheet' | 'fullscreen', 'sheet'>;
+
+  // Runner selection (spec §10.4). 'embedded' (default) is the normal SEA
+  // path; 'nativeBrowser' skips it entirely and hands the whole login
+  // attempt to ASWebAuthenticationSession up front (mirrors SEAAuthMode in
+  // packages/sea-core-ios/Sources/SEACore/SEAConfig.swift).
+  authMode?: WithDefault<'embedded' | 'nativeBrowser', 'embedded'>;
+
   appearance?: NativeAppearance;
 
   // Host-supplied narrowing allowlist (spec §7.1/§7.3) — intersected with

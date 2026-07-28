@@ -31,6 +31,30 @@ const MIN_TIMEOUT_MS = 5_000;
 const MAX_TIMEOUT_MS = 600_000;
 const TIMEOUT_STEP_MS = 5_000;
 
+// UI-only merge of SEAConfig's two independent knobs (presentation,
+// authMode) into a single 3-way picker, so a tester can reach the §10.4
+// fallback (ASWebAuthenticationSession) without a separate control.
+// 'browser' means authMode: 'nativeBrowser' — presentation is irrelevant on
+// that path (the fallback runner ignores it) but a value is still needed on
+// Settings, so it's left unchanged.
+type RendererMode = 'sheet' | 'fullscreen' | 'browser';
+
+const RENDERER_LABEL: Record<RendererMode, string> = {
+  sheet: 'Sheet',
+  fullscreen: 'Fullscreen',
+  browser: 'Browser',
+};
+
+const RENDERER_PATCH: Record<RendererMode, Partial<Settings>> = {
+  sheet: { presentation: 'sheet', authMode: 'embedded' },
+  fullscreen: { presentation: 'fullscreen', authMode: 'embedded' },
+  browser: { authMode: 'nativeBrowser' },
+};
+
+function rendererMode(settings: Settings): RendererMode {
+  return settings.authMode === 'nativeBrowser' ? 'browser' : settings.presentation;
+}
+
 /** Mirrors apps/demo-ios/Sources/Views/ConfigView.swift (spec §7, §11.3). */
 export function ConfigScreen({
   settings,
@@ -94,16 +118,16 @@ export function ConfigScreen({
         <View style={styles.row}>
           <Text style={styles.label}>Presentation</Text>
           <View style={styles.segmented}>
-            {(['sheet', 'fullscreen'] as const).map((option) => (
+            {(['sheet', 'fullscreen', 'browser'] as const).map((option) => (
               <Text
                 key={option}
-                onPress={() => onChangeSettings({ presentation: option })}
+                onPress={() => onChangeSettings(RENDERER_PATCH[option])}
                 style={[
                   styles.segment,
-                  settings.presentation === option && styles.segmentActive,
+                  rendererMode(settings) === option && styles.segmentActive,
                 ]}
               >
-                {option === 'sheet' ? 'Sheet' : 'Fullscreen'}
+                {RENDERER_LABEL[option]}
               </Text>
             ))}
           </View>

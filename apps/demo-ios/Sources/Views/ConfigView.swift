@@ -44,9 +44,10 @@ struct ConfigView: View {
                     TextField("Allowed domains (comma list)", text: $settings.allowedDomains)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
-                    Picker("Presentation", selection: presentationBinding) {
-                        Text("Sheet").tag(false)
-                        Text("Fullscreen").tag(true)
+                    Picker("Presentation", selection: rendererModeBinding) {
+                        Text("Sheet").tag(RendererMode.sheet)
+                        Text("Fullscreen").tag(RendererMode.fullscreen)
+                        Text("Browser").tag(RendererMode.browser)
                     }
                     .pickerStyle(.segmented)
                     Stepper(
@@ -138,19 +139,45 @@ struct ConfigView: View {
 
     @State private var purgeMessage: String?
 
-    // SEAPresentation (SEACore) has no documented Equatable/Hashable
-    // conformance, so rather than retroactively conforming a contract type
-    // (risky: it could collide if the core adds conformance later), we bind
-    // the segmented Picker to a plain Bool and translate at the edges.
-    private var presentationBinding: Binding<Bool> {
+    // UI-only merge of SEAConfig's two independent knobs (presentation,
+    // authMode) into a single 3-way picker, so a tester can reach the §10.4
+    // fallback (ASWebAuthenticationSession) without a separate control.
+    // `.browser` means authMode = .nativeBrowser — presentation is
+    // irrelevant on that path (the fallback runner ignores it) but a value
+    // is still needed on AppSettings, so it's left unchanged.
+    private enum RendererMode: Hashable {
+        case sheet, fullscreen, browser
+    }
+
+    // SEAPresentation/SEAAuthMode (SEACore) have no documented
+    // Equatable/Hashable conformance (SEAAuthMode does as of this writing,
+    // but SEAPresentation doesn't), so rather than retroactively conforming
+    // a contract type, this binds the segmented Picker to the plain
+    // RendererMode enum above and translates at the edges.
+    private var rendererModeBinding: Binding<RendererMode> {
         Binding(
             get: {
-                switch settings.presentation {
-                case .fullscreen: return true
-                case .sheet: return false
+                switch settings.authMode {
+                case .nativeBrowser: return .browser
+                case .embedded:
+                    switch settings.presentation {
+                    case .fullscreen: return .fullscreen
+                    case .sheet: return .sheet
+                    }
                 }
             },
-            set: { settings.presentation = $0 ? .fullscreen : .sheet }
+            set: { mode in
+                switch mode {
+                case .sheet:
+                    settings.authMode = .embedded
+                    settings.presentation = .sheet
+                case .fullscreen:
+                    settings.authMode = .embedded
+                    settings.presentation = .fullscreen
+                case .browser:
+                    settings.authMode = .nativeBrowser
+                }
+            }
         )
     }
 

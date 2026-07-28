@@ -26,16 +26,15 @@
 	 App-Bound Domains restriction (limitsNavigationsToAppBoundDomains = true, enforced
 	 inside SEACore). "auth.bank.local" is the demo/dev auth domain used by the local
 	 infra Keycloak realm; "localhost" is included so the fuzz/mock corpus and local
-	 dev backends can be exercised on-device; "platform-keycloak.pres.proxym-it.net"
-	 is the live Keycloak host behind the real showcase gateway used for integration
-	 testing. Production consumers replace this list with their real auth domain(s)
-	 only.
+	 dev backends can be exercised on-device; "keycloak.example.com" is a placeholder
+	 for a second, remotely-hosted Keycloak host used for integration testing.
+	 Production consumers replace this list with their real auth domain(s) only.
 	-->
 	<key>WKAppBoundDomains</key>
 	<array>
 		<string>auth.bank.local</string>
 		<string>localhost</string>
-		<string>platform-keycloak.pres.proxym-it.net</string>
+		<string>keycloak.example.com</string>
 	</array>
 
 	<!--

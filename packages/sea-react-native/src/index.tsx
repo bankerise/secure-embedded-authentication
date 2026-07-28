@@ -35,6 +35,10 @@ export type SEAAppearance = Readonly<{
 export type SecureAuthenticationViewProps = Readonly<{
   authorizeUrl: string;
   presentation?: 'sheet' | 'fullscreen';
+  // Runner selection (spec §10.4). 'embedded' (default) is the normal SEA
+  // path; 'nativeBrowser' hands the whole login attempt to
+  // ASWebAuthenticationSession up front instead.
+  authMode?: 'embedded' | 'nativeBrowser';
   appearance?: SEAAppearance;
   allowedDomains?: ReadonlyArray<string>;
   timeoutMs?: number;

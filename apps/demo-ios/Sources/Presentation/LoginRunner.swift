@@ -63,7 +63,8 @@ final class LoginRunner: ObservableObject {
             allowedDomains: settings.allowedDomainsArray,
             presentation: settings.presentation,
             appearance: .default,
-            timeoutMs: settings.timeoutMs
+            timeoutMs: settings.timeoutMs,
+            authMode: settings.authMode
         )
 
         // Remember what Logout needs from this session: the authorize URL (to

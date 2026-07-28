@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
 
   s.platforms    = { :ios => "15.0" }
   s.swift_version = "5.9"
-  s.source       = { :git => "https://github.com/bankerise/bankerise-sea.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/bankerise/secure-embedded-authentication.git", :tag => "sea-react-native/#{s.version}" }
 
   s.source_files = "ios/**/*.{h,m,mm,swift,cpp}"
   s.private_header_files = "ios/**/*.h"

@@ -66,12 +66,24 @@ public final class SEASession {
     /// Simulator/device where `SEAWebAuthnCapability`'s real default would
     /// choose the embedded path. `internal`, not `private`, for exactly that
     /// reason — see `SEACoreTests`.
+    ///
+    /// `config.authMode == .nativeBrowser` is checked first and short-circuits
+    /// the WebAuthn capability probe entirely — an explicit caller choice
+    /// always wins over the automatic pre-flight decision.
     static func viewController(
         for config: SEAConfig,
         environment: SEAEnvironment,
         callbacks: Callbacks,
         embeddedCeremonySupported: Bool = SEAWebAuthnCapability.isEmbeddedCeremonySupported()
     ) -> UIViewController {
+        guard config.authMode == .embedded else {
+            return SEAFallbackEntryViewController(
+                config: config,
+                environment: environment,
+                callbacks: callbacks,
+                reason: "explicit"
+            )
+        }
         guard embeddedCeremonySupported else {
             return SEAFallbackEntryViewController(
                 config: config,

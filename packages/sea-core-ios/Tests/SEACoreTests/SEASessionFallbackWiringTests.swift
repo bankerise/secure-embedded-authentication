@@ -50,4 +50,21 @@ final class SEASessionFallbackWiringTests: XCTestCase {
         let vc = SEASession.viewController(for: makeConfig(), environment: makeEnvironment(), callbacks: makeCallbacks())
         XCTAssertTrue(vc is SEAAuthViewController)
     }
+
+    // MARK: - authMode = .nativeBrowser (explicit, caller-selected)
+
+    func test_authModeNativeBrowser_returnsTheFallbackEntryViewController_evenWhenEmbeddedIsSupported() {
+        let config = SEAConfig(authorizeURL: makeConfig().authorizeURL, authMode: .nativeBrowser)
+        let vc = SEASession.viewController(
+            for: config,
+            environment: makeEnvironment(),
+            callbacks: makeCallbacks(),
+            embeddedCeremonySupported: true
+        )
+        XCTAssertTrue(vc is SEAFallbackEntryViewController)
+    }
+
+    func test_authModeEmbedded_isTheDefault() {
+        XCTAssertEqual(makeConfig().authMode, .embedded)
+    }
 }

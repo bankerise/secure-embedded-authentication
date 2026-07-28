@@ -3,7 +3,7 @@
   "compilerOptions": {
     "types": ["jest"],
     "paths": {
-      "sea-react-native": ["../../packages/sea-react-native/src/index"]
+      "@bankerise-platform/sea-react-native": ["../../packages/sea-react-native/src/index"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],

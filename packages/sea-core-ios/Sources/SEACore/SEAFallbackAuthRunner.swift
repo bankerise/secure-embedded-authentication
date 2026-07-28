@@ -174,7 +174,10 @@ final class SEAFallbackEntryViewController: UIViewController {
     private var hasStarted = false
 
     /// - Parameter reason: `"preflight"` or `"runtime"` (spec §20.1
-    ///   `AUTH_WEBAUTHN_FALLBACK { reason: preflight|runtime }`).
+    ///   `AUTH_WEBAUTHN_FALLBACK { reason: preflight|runtime }`), or
+    ///   `"explicit"` when the caller set `config.authMode = .nativeBrowser`
+    ///   directly — not a WebAuthn-capability fallback at all, so this case
+    ///   does not emit `AUTH_WEBAUTHN_FALLBACK` (see `viewDidAppear`).
     init(
         config: SEAConfig,
         environment: SEAEnvironment,
@@ -214,10 +217,15 @@ final class SEAFallbackEntryViewController: UIViewController {
             "prewarmed": "false",
             "locale": Locale.current.identifier
         ])
-        SEATelemetry.record(name: SEATelemetryEventName.webauthnFallback, properties: [
-            "reason": reason,
-            "os_version": SEAFallbackEntryViewController.osVersionString()
-        ])
+        // "explicit" (config.authMode = .nativeBrowser) is a deliberate
+        // caller choice, not a WebAuthn-capability fallback — don't misreport
+        // it as one on rollout dashboards keyed off AUTH_WEBAUTHN_FALLBACK.
+        if reason == "preflight" || reason == "runtime" {
+            SEATelemetry.record(name: SEATelemetryEventName.webauthnFallback, properties: [
+                "reason": reason,
+                "os_version": SEAFallbackEntryViewController.osVersionString()
+            ])
+        }
 
         let runner = SEAFallbackAuthRunner(
             config: config,

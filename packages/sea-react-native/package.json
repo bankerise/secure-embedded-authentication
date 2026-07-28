@@ -42,17 +42,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@gitlab.proxym-group.net:3022/bankerise-platform/bankerise-sea.git"
+    "url": "git+https://github.com/bankerise/secure-embedded-authentication.git"
   },
   "author": "Bankerise",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "bugs": {
-    "url": "https://gitlab.proxym-group.net/bankerise-platform/bankerise-sea/-/issues"
+    "url": "https://github.com/bankerise/secure-embedded-authentication/issues"
   },
-  "homepage": "https://gitlab.proxym-group.net/bankerise-platform/bankerise-sea#readme",
+  "homepage": "https://github.com/bankerise/secure-embedded-authentication#readme",
   "publishConfig": {
-    "registry": "https://repos.proxym-group.net/repository/npm-private/",
-    "access": "restricted"
+    "access": "public"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^21.0.2",

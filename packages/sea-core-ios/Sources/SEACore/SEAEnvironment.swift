@@ -83,7 +83,7 @@ public struct SEAEnvironment {
     /// <string>bkrmob</string>
     /// <key>AuthDomains</key>
     /// <array>
-    ///     <string>platform-keycloak.pres.proxym-it.net</string>
+    ///     <string>keycloak.example.com</string>
     /// </array>
     /// ```
     private struct SecurityConfigPlist: Decodable {

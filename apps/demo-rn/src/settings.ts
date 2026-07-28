@@ -13,6 +13,10 @@ export type Settings = Readonly<{
   gatewayBaseURL: string;
   allowedDomains: string;
   presentation: 'sheet' | 'fullscreen';
+  // Runner selection (spec §10.4). 'embedded' (default) is the normal SEA
+  // path; 'nativeBrowser' hands the whole login attempt to
+  // ASWebAuthenticationSession up front instead.
+  authMode: 'embedded' | 'nativeBrowser';
   timeoutMs: number;
   useMockGateway: boolean;
   mockRedirectURL: string;
@@ -23,6 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   gatewayBaseURL: 'http://localhost:8080',
   allowedDomains: ALLOWED_DOMAINS.join(','),
   presentation: 'sheet',
+  authMode: 'embedded',
   timeoutMs: 120_000,
   useMockGateway: true,
   mockRedirectURL: MOCK_AUTHORIZE_URL,

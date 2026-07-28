@@ -1,15 +1,78 @@
 # Bankerise SEA — Secure Embedded Authentication
 
-Native authentication using hardened embedded WebViews (the Binance / Revolut
-pattern), against a bank-owned Keycloak, orchestrated by the Bankerise API
-Gateway as confidential OAuth2 client (BFF).
+[![sea-core-ios](https://github.com/bankerise/secure-embedded-authentication/actions/workflows/sea-core-ios.yml/badge.svg)](https://github.com/bankerise/secure-embedded-authentication/actions/workflows/sea-core-ios.yml)
+[![sea-react-native](https://github.com/bankerise/secure-embedded-authentication/actions/workflows/sea-react-native.yml/badge.svg)](https://github.com/bankerise/secure-embedded-authentication/actions/workflows/sea-react-native.yml)
+[![npm](https://img.shields.io/npm/v/%40bankerise-platform%2Fsea-react-native)](https://www.npmjs.com/package/@bankerise-platform/sea-react-native)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-## Specifications
+Native-feeling login for apps that authenticate against Keycloak (or any
+OIDC provider), without handing the whole login screen off to a system
+browser.
 
-[bankerise_sea_specs-v1.0.md](bankerise_sea_specs-v1.0.md) — v1.2, normative.
+## The problem
 
-The iOS API contract derived from it:
-[docs/api-contract-ios-v1.md](docs/api-contract-ios-v1.md).
+The standards-recommended way to do OAuth2/OIDC on mobile is to open the
+authorize URL in an external user-agent — `ASWebAuthenticationSession` on
+iOS, Chrome Custom Tabs on Android. It's secure and RFC-8252-compliant, but
+it's also a visibly non-native experience: browser chrome, an address bar,
+a jarring context switch away from your app. For a login screen — the front
+door of the app — that seam is exactly where users notice they've left your
+product.
+
+**SEA** is a hardened embedded `WKWebView` that gets you the native,
+in-app feel back, while keeping the security properties (origin-validated
+authorize URLs, in-process callback capture, deny-by-default navigation,
+passkey/WebAuthn support) that make the system-browser pattern safe in the
+first place. See [bankerise_sea_specs-v1.0.md](bankerise_sea_specs-v1.0.md)
+for the full threat model and design rationale.
+
+## Screenshots
+
+<!-- TODO: replace with real screenshots — embedded login (password),
+     passkey-first CTA, and the system-browser fallback for comparison. -->
+
+| Embedded login | Passkey-first | System-browser fallback |
+|---|---|---|
+| _screenshot placeholder_ | _screenshot placeholder_ | _screenshot placeholder_ |
+
+## Packages
+
+| Package | What it is | Install |
+|---|---|---|
+| `sea-core-ios` | Swift package — the audited security core | CocoaPods (below) |
+| `sea-react-native` | Fabric bridge wrapping `sea-core-ios` (spec §7) | `yarn add @bankerise-platform/sea-react-native` |
+| `sea-core-android` | Not started yet — core-first, iOS-first (spec §4.8) | — |
+
+### iOS (CocoaPods)
+
+The `Specs/` index lives in this same repo, so no extra Specs repo is
+needed — just add this repo as a Podfile `source` alongside the default
+CDN:
+
+```ruby
+source 'https://cdn.cocoapods.org/'
+source 'https://github.com/bankerise/secure-embedded-authentication.git'
+
+pod 'SEACore', '~> 0.0.1'
+```
+
+### React Native
+
+```bash
+yarn add @bankerise-platform/sea-react-native
+```
+
+```tsx
+<SecureAuthenticationView
+  authorizeUrl={authorizeUrl}
+  presentation="sheet"
+  appearance={{ headerBackground: '#0B1E3F', accent: '#3D8BFF' }}
+  allowedDomains={['auth.example.com']}
+  onCaptured={(params) => submitToGateway(params)}
+  onCancelled={() => {}}
+  onError={(e) => console.error(e.code)}
+/>
+```
 
 ## Layout
 
@@ -19,6 +82,7 @@ packages/sea-react-native/ Fabric bridge wrapping sea-core-ios (spec §7)
 apps/demo-ios/             Native device-lab harness (§23.3)
 apps/demo-rn/               Bridge validation harness only (§4.4)
 infra/                     Keycloak dev stack + realm export
+themes/                    Keycloak theme shipped alongside SEA
 docs/                      Spec + API contract
 ```
 
@@ -52,11 +116,11 @@ silently succeeds in their place:
 | Broker `EXTERNAL_TAB` | §12.4 | Phase 2 |
 | Kill-switch fallback (gateway `authMode`) | §21 | Phase 2 — not yet branched on in either demo app |
 | Android core | §4.2 | Not started |
+| Android Auth Tab / Custom Tabs runner | §10.4 | Decision recorded, not implemented (needs `sea-core-android`) |
 
 **App Attest (§16) and TLS/certificate pinning (§15) are explicitly out of
 SEA's scope**, not a SEA phase-2 item — they are host-app/API Gateway
-responsibilities. The Bankerise Mobile SDK already performs app attestation
-against the gateway independently of SEA.
+responsibilities.
 
 This phase covers the §6 handoff perimeter, passkeys, and the RN bridge. A
 full security review additionally requires the host app/gateway's
@@ -91,3 +155,20 @@ See each directory's README for detail.
 Xcode 26+, [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 (`brew install xcodegen`), Docker, Node >=22.13 (see `.nvmrc`) + Yarn
 classic for `apps/demo-rn`.
+
+## Documentation
+
+- [bankerise_sea_specs-v1.0.md](bankerise_sea_specs-v1.0.md) — the
+  normative spec (threat model, design rationale, full contract).
+- [docs/api-contract-ios-v1.md](docs/api-contract-ios-v1.md) — the iOS API
+  contract derived from it.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup, monorepo ground
+rules, and release process. Security issues: see
+[SECURITY.md](SECURITY.md) instead of opening a public issue.
+
+## License
+
+[Apache-2.0](LICENSE).

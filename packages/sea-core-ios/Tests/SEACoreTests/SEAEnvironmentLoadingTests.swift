@@ -29,7 +29,7 @@ final class SEAEnvironmentLoadingTests: XCTestCase {
     func test_validFixture_parsesIntoExpectedAuthDomainsAndCallbackScheme() {
         let env = SEAEnvironment.load(from: .module)
         XCTAssertEqual(env.callbackScheme, "bkrmob")
-        XCTAssertEqual(env.authDomains, ["platform-keycloak.pres.proxym-it.net"])
+        XCTAssertEqual(env.authDomains, ["keycloak.example.com"])
     }
 
     // MARK: - Table-driven: every fail-closed path

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Button, FlatList, StyleSheet, Text, View } from 'react-native';
-import { copyToClipboard, subscribeToTelemetry } from 'sea-react-native';
-import type { SEATelemetryEvent } from 'sea-react-native';
+import { copyToClipboard } from '@bankerise-platform/sea-react-native';
+import type { SEATelemetryEvent } from '@bankerise-platform/sea-react-native';
 
-type Entry = SEATelemetryEvent & { id: string };
+export type TelemetryEntry = SEATelemetryEvent & { id: string };
 
 function propertiesText(properties: Readonly<Record<string, string>>): string {
   return Object.entries(properties)
@@ -16,26 +16,20 @@ function formattedTimestamp(timestampMs: number): string {
   return new Date(timestampMs).toLocaleTimeString([], { hour12: false });
 }
 
+type Props = {
+  entries: TelemetryEntry[];
+  onClear: () => void;
+};
+
 /**
  * Live console for every SEAEvent SEACore emits (§20), mirroring
- * apps/demo-ios/Sources/Views/TelemetryConsoleView.swift. Subscribes only
- * while mounted — this is how the tester verifies lifecycle events
- * (AUTH_WEBVIEW_OPENED, AUTH_NAV_BLOCKED, AUTH_CAPTURE_DETECTED, ...)
- * actually fire.
+ * apps/demo-ios/Sources/Views/TelemetryConsoleView.swift. Entries are owned
+ * by App (subscribed for the app's whole lifetime, not just while this
+ * screen is mounted) since SeaTelemetryEmitter drops events fired while no
+ * JS listener is subscribed — see subscribeToTelemetry in App.tsx.
  */
-export function TelemetryScreen(): React.JSX.Element {
-  const [entries, setEntries] = React.useState<Entry[]>([]);
+export function TelemetryScreen({ entries, onClear }: Props): React.JSX.Element {
   const [didCopy, setDidCopy] = React.useState(false);
-  const nextId = React.useRef(0);
-
-  React.useEffect(() => {
-    const unsubscribe = subscribeToTelemetry((event) => {
-      nextId.current += 1;
-      const id = String(nextId.current);
-      setEntries((prev) => [...prev, { ...event, id }]);
-    });
-    return unsubscribe;
-  }, []);
 
   const copyableText = React.useMemo(
     () =>
@@ -50,7 +44,7 @@ export function TelemetryScreen(): React.JSX.Element {
       <View style={styles.header}>
         <Text style={styles.title}>Telemetry ({entries.length})</Text>
         <View style={styles.actions}>
-          <Button title="Clear" onPress={() => setEntries([])} disabled={entries.length === 0} />
+          <Button title="Clear" onPress={onClear} disabled={entries.length === 0} />
           <Button
             title={didCopy ? 'Copied' : 'Copy all'}
             disabled={entries.length === 0}

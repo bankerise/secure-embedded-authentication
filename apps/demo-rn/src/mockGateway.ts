@@ -19,7 +19,7 @@ export const MOCK_AUTHORIZE_URL =
 export const ALLOWED_DOMAINS = [
   'auth.bank.local',
   'localhost',
-  'platform-keycloak.pres.proxym-it.net',
+  'keycloak.example.com',
 ];
 
 /**

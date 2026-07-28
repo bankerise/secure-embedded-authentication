@@ -1,4 +1,4 @@
-import type { SEAError } from 'sea-react-native';
+import type { SEAError } from '@bankerise-platform/sea-react-native';
 
 export type Result =
   | { kind: 'idle' }
