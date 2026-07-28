@@ -119,7 +119,7 @@ internal class SEAAuthDelegate(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            setBackgroundColor(Color.parseColor("#40000000"))
+            setBackgroundColor(Color.parseColor("#1A000000"))
             setOnClickListener { onClick() }
         }
     }
