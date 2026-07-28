@@ -1,20 +1,19 @@
 package com.bankerise.sea.core
 
 import android.app.Activity
-import android.os.Build
 import androidx.annotation.RequiresApi
 
 /**
- * Isolated helper for screen-capture monitoring on API 30+.
+ * Isolated helper for screen-capture monitoring on API 34+.
  *
  * This class is intentionally separate from [SEAScreenSecurity] so that
  * the reference to [Activity.ScreenCaptureCallback] is only resolved when
- * this class is loaded — which only happens inside a [Build.VERSION_CODES.R]
+ * this class is loaded — which only happens inside a `Build.VERSION.SDK_INT >= 34`
  * guard.  If this reference lived directly in [SEAScreenSecurity], the ART
  * class verifier would resolve it when [SEAScreenSecurity] is first loaded
- * (e.g. via [SEAScreenSecurity.applySecureFlag]), crashing on API < 30.
+ * (e.g. via [SEAScreenSecurity.applySecureFlag]), crashing on API < 34.
  */
-@RequiresApi(Build.VERSION_CODES.R)
+@RequiresApi(34)
 internal class CaptureMonitorHelper(
     private val activity: Activity,
     private val onCaptured: (Boolean) -> Unit
