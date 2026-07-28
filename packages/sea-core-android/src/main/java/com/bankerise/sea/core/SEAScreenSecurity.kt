@@ -47,7 +47,7 @@ object SEAScreenSecurity {
     }
 
     /**
-     * Start monitoring for screen capture (API 30+). On older APIs,
+     * Start monitoring for screen capture (API 34+). On older APIs,
      * this is a no-op — FLAG_SECURE is the only protection available.
      *
      * @param activity The activity to monitor
@@ -59,7 +59,7 @@ object SEAScreenSecurity {
     ) {
         this.onCaptureChanged = onCaptureChanged
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT >= 34) {
             val helper = CaptureMonitorHelper(activity) { captured ->
                 isCaptured = captured
                 Handler(Looper.getMainLooper()).post {
@@ -80,7 +80,7 @@ object SEAScreenSecurity {
     }
 
     /**
-     * Check if screen is currently being captured. Only reliable on API 30+.
+     * Check if screen is currently being captured. Only reliable on API 34+.
      */
     fun isScreenCaptured(): Boolean = isCaptured
 
