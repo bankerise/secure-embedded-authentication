@@ -1,0 +1,13 @@
+pluginManagement { includeBuild("../../../node_modules/@react-native/gradle-plugin") }
+plugins { id("com.facebook.react.settings") }
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+rootProject.name = 'demo_rn'
+include ':app'
+
+// Local native library dependencies (monorepo)
+// sea-core-android is a plain Android library (not RN), so autolinking
+// won't discover it — include it manually.
+include(':sea-core-android')
+project(':sea-core-android').projectDir = file('../../../packages/sea-core-android')
+
+includeBuild('../../../node_modules/@react-native/gradle-plugin')
