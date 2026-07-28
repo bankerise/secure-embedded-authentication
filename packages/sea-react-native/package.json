@@ -1,6 +1,6 @@
 {
-  "name": "@bankerise-platform/sea-react-native",
-  "version": "0.0.1",
+  "name": "sea-react-native",
+  "version": "0.1.0",
   "description": "Bankerise SEA React Native bridge (Fabric)",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -108,6 +108,13 @@
     "type": "components",
     "jsSrcsDir": "src",
     "ios": {
+      "components": {
+        "SeaReactNativeView": {
+          "className": "SeaReactNativeView"
+        }
+      }
+    },
+    "android": {
       "components": {
         "SeaReactNativeView": {
           "className": "SeaReactNativeView"

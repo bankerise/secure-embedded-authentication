@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Bottom-sheet Activity theme (§18.1). Transparent window + slide animations. -->
+    <style name="SEA.AuthSheetTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowAnimationStyle">@style/SEA.AuthSheetAnimation</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+
+    <style name="SEA.AuthSheetAnimation" parent="">
+        <item name="android:windowEnterAnimation">@anim/sea_slide_up</item>
+        <item name="android:windowExitAnimation">@anim/sea_slide_down</item>
+    </style>
+
+</resources>
