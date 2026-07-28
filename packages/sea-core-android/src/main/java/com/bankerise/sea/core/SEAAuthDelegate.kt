@@ -107,6 +107,7 @@ internal class SEAAuthDelegate(
         if (config.appearance.showsGrabber) sheet.addView(createGrabber(parent))
         toolbar = createToolbar(parent)
         sheet.addView(toolbar)
+
         val overlay = createOverlay(parent)
         sheet.addView(overlay)
         backdrop.addView(sheet)
@@ -169,12 +170,27 @@ internal class SEAAuthDelegate(
 
     private fun createToolbar(parent: ViewGroup): Toolbar {
         return Toolbar(parent.context).apply {
-            setBackgroundColor(config.appearance.headerBackground)
+            setBackgroundColor(Color.TRANSPARENT)
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 dpToPx(parent, 56)
             )
-            elevation = dpToPx(parent, 4).toFloat()
+            elevation = 0f
+
+            // Title (left-aligned)
+            val titleView = TextView(parent.context).apply {
+                setTextColor(config.appearance.headerText)
+                textSize = 18f
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }
+            addView(titleView, Toolbar.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.START or Gravity.CENTER_VERTICAL
+            ).apply {
+                marginStart = dpToPx(parent, 16)
+            })
 
             // Close button (right side)
             val closeBtn = android.widget.ImageButton(parent.context).apply {
@@ -194,24 +210,6 @@ internal class SEAAuthDelegate(
             ).apply {
                 marginEnd = dpToPx(parent, 8)
             })
-
-            // Title
-            val titleView = TextView(parent.context).apply {
-                setTextColor(config.appearance.headerText)
-                textSize = 18f
-                maxLines = 1
-                ellipsize = android.text.TextUtils.TruncateAt.END
-                layoutParams = Toolbar.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    Gravity.CENTER
-                )
-            }
-            addView(titleView, Toolbar.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-            ))
         }
     }
 
