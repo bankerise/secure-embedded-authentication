@@ -11,7 +11,7 @@ import React, { useCallback, useState } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { purgeWebData, SecureAuthenticationView } from 'sea-react-native';
 import { startAuthorization as startMockAuthorization } from './src/mockGateway';
-import { startAuthorization as startRealAuthorization } from './src/gateway';
+import { getCurrentUser, startAuthorization as startRealAuthorization } from './src/gateway';
 import { allowedDomainsArray, DEFAULT_SETTINGS, type Settings } from './src/settings';
 import type { Result } from './src/types';
 import { useSessionLogout } from './src/useSessionLogout';
@@ -64,8 +64,8 @@ function App(): React.JSX.Element {
 
   const dismiss = useCallback(() => {
     console.log('dismiss');
-    
-    // setAuthorizeUrl(null)
+    setAuthorizeUrl(null)
+    getCurrentUser();
   }, []);
 
   const onPurgeWebData = useCallback(() => {

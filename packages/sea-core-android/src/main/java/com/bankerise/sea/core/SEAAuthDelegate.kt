@@ -28,7 +28,6 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import androidx.appcompat.widget.Toolbar
 
 /**
  * Internal delegate that owns all WebView + navigation + terminal-callback
@@ -56,7 +55,9 @@ internal class SEAAuthDelegate(
 
     lateinit var webView: WebView
         private set
-    lateinit var toolbar: Toolbar
+    lateinit var toolbar: LinearLayout
+        private set
+    lateinit var titleTextView: TextView
         private set
     lateinit var loadingView: ProgressBar
         private set
@@ -168,31 +169,33 @@ internal class SEAAuthDelegate(
         }
     }
 
-    private fun createToolbar(parent: ViewGroup): Toolbar {
-        return Toolbar(parent.context).apply {
+    private fun createToolbar(parent: ViewGroup): LinearLayout {
+        return LinearLayout(parent.context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
             setBackgroundColor(Color.TRANSPARENT)
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dpToPx(parent, 56)
+                dpToPx(parent, 72)
             )
-            elevation = 0f
 
-            // Title (left-aligned)
-            val titleView = TextView(parent.context).apply {
+            // Title (weighted, takes remaining space)
+            titleTextView = TextView(parent.context).apply {
                 setTextColor(config.appearance.headerText)
                 textSize = 18f
-                maxLines = 1
-                ellipsize = android.text.TextUtils.TruncateAt.END
+                maxLines = 2
             }
-            addView(titleView, Toolbar.LayoutParams(
+            addView(titleTextView, LinearLayout.LayoutParams(
+                0,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.START or Gravity.CENTER_VERTICAL
+                1f
             ).apply {
                 marginStart = dpToPx(parent, 16)
+                marginEnd = dpToPx(parent, 8)
+                gravity = Gravity.CENTER_VERTICAL
             })
 
-            // Close button (right side)
+            // Close button (fixed at end)
             val closeBtn = android.widget.ImageButton(parent.context).apply {
                 setImageDrawable(
                     androidx.core.content.ContextCompat.getDrawable(
@@ -203,12 +206,12 @@ internal class SEAAuthDelegate(
                 setOnClickListener { headerCloseTapped() }
                 contentDescription = SEAStrings.actionClose(context)
             }
-            addView(closeBtn, Toolbar.LayoutParams(
+            addView(closeBtn, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.END or Gravity.CENTER_VERTICAL
+                ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
                 marginEnd = dpToPx(parent, 8)
+                gravity = Gravity.CENTER_VERTICAL
             })
         }
     }
@@ -650,8 +653,7 @@ internal class SEAAuthDelegate(
 
     private fun updateHeaderTitle(title: String?) {
         val sanitized = config.appearance.title ?: SEATitleSanitizer.sanitize(title)
-        val titleView = toolbar.getChildAt(1) as? TextView
-        titleView?.text = sanitized
+        titleTextView.text = sanitized
     }
 
     // ---- Helpers ----
