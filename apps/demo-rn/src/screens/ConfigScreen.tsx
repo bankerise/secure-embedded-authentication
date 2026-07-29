@@ -60,6 +60,15 @@ export function ConfigScreen({
             keyboardType="url"
           />
         </Field>
+        <Field label="App version key">
+          <TextInput
+            style={[styles.input, styles.mono]}
+            value={settings.appVersionKey}
+            onChangeText={(v) => onChangeSettings({ appVersionKey: v })}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </Field>
         <View style={styles.row}>
           <Text style={styles.label}>Use mock gateway</Text>
           <Switch
@@ -82,6 +91,15 @@ export function ConfigScreen({
       </Section>
 
       <Section title="SEAConfig">
+        <Field label="Callback scheme">
+          <TextInput
+            style={[styles.input, styles.mono]}
+            value={settings.callbackScheme}
+            onChangeText={(v) => onChangeSettings({ callbackScheme: v })}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </Field>
         <Field label="Allowed domains (comma list)">
           <TextInput
             style={styles.input}
@@ -89,6 +107,26 @@ export function ConfigScreen({
             onChangeText={(v) => onChangeSettings({ allowedDomains: v })}
             autoCapitalize="none"
             autoCorrect={false}
+          />
+        </Field>
+        <Field label="Allowed ports (comma list)">
+          <TextInput
+            style={[styles.input, styles.mono]}
+            value={settings.allowedPorts}
+            onChangeText={(v) => onChangeSettings({ allowedPorts: v })}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="numeric"
+          />
+        </Field>
+        <Field label="Max URL length (bytes)">
+          <TextInput
+            style={[styles.input, styles.mono]}
+            value={String(settings.maxUrlLengthBytes)}
+            onChangeText={(v) => onChangeSettings({ maxUrlLengthBytes: parseInt(v, 10) || 2048 })}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="numeric"
           />
         </Field>
         <View style={styles.row}>

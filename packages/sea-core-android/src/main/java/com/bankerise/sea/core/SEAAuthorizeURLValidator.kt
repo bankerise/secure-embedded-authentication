@@ -12,19 +12,21 @@ import android.net.Uri
  */
 object SEAAuthorizeURLValidator {
 
-    private const val MAX_URL_LENGTH_BYTES = 2048
-
     /**
      * Validates [url] against [env]'s compiled allowlist, narrowed by
      * [hostAllowlist].
      *
+     * @param allowedPorts ports the URL may use (-1 = unset, 443 = default HTTPS).
+     * @param maxUrlLengthBytes maximum byte length of the URL string.
      * @return [Result.success] with the original URL, or
      *         [Result.failure] with the first [InvalidUrlReason] that failed.
      */
     fun validate(
         url: Uri,
         env: SEAEnvironment,
-        hostAllowlist: List<String>
+        hostAllowlist: List<String>,
+        allowedPorts: Set<Int> = setOf(-1, 443),
+        maxUrlLengthBytes: Int = 2048
     ): Result<Uri> {
         val uriString = url.toString()
 
@@ -40,14 +42,14 @@ object SEAAuthorizeURLValidator {
             return Result.failure(InvalidUrlException(InvalidUrlReason.USERINFO))
         }
 
-        // 3. port is -1 (unset/standard) or 443.
+        // 3. port is in the allowed set.
         val port = url.port
-        if (port != -1 && port != 443) {
+        if (port !in allowedPorts) {
             return Result.failure(InvalidUrlException(InvalidUrlReason.PORT))
         }
 
-        // 4. absoluteString length in bytes <= 2048.
-        if (uriString.toByteArray(Charsets.UTF_8).size > MAX_URL_LENGTH_BYTES) {
+        // 4. absoluteString length in bytes <= maxUrlLengthBytes.
+        if (uriString.toByteArray(Charsets.UTF_8).size > maxUrlLengthBytes) {
             return Result.failure(InvalidUrlException(InvalidUrlReason.LENGTH))
         }
 

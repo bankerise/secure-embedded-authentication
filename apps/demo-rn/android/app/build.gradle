@@ -81,6 +81,19 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
+    // Copy bankerise-sea.properties into assets so SEAConfigProvider can read it.
+    applicationVariants.configureEach { variant ->
+        tasks.named("merge${variant.name.capitalize()}Assets").configure {
+            doLast {
+                def propsFile = file("../../bankerise-sea.properties")
+                def assetsDir = outputDir.get().asFile
+                if (propsFile.exists()) {
+                    ant.copy(file: propsFile, todir: assetsDir)
+                }
+            }
+        }
+    }
     signingConfigs {
         debug {
             storeFile file('debug.keystore')

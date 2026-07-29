@@ -1,6 +1,8 @@
 package com.bankerise.seareactnative
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.View
 import com.facebook.react.bridge.ReactContext
@@ -50,6 +52,9 @@ class SeaReactNativeView @JvmOverloads constructor(
     var title: String = ""
     var allowedDomains: List<String> = emptyList()
     var timeoutMs: Int = 0
+    var callbackScheme: String = ""
+    var allowedPorts: Set<Int> = emptySet()
+    var maxUrlLengthBytes: Int = 2048
 
     // ── Terminal-event callbacks (set by ViewManager) ──
 
@@ -75,40 +80,51 @@ class SeaReactNativeView @JvmOverloads constructor(
         val activity = reactContext?.currentActivity ?: return
         hasStarted = true
 
-        SEABridgePresenter.start(
-            activity = activity,
-            authorizeUrl = authorizeUrl,
-            presentation = presentation,
-            allowedDomains = allowedDomains,
-            timeoutMs = timeoutMs,
-            headerBackground = headerBackground,
-            headerText = headerText,
-            accent = accent,
-            closeIconTint = closeIconTint,
-            cornerRadius = cornerRadius,
-            title = title,
-            callbacks = SEABridgePresenter.BridgeCallbacks(
-                onCaptured = { paramsJson ->
-                    val map = Arguments.createMap().apply {
-                        try {
-                            val json = JSONObject(paramsJson)
-                            json.keys().forEach { key ->
-                                putString(key, json.getString(key))
-                            }
-                        } catch (_: Exception) {}
+        val block = Runnable {
+            SEABridgePresenter.start(
+                activity = activity,
+                authorizeUrl = authorizeUrl,
+                presentation = presentation,
+                allowedDomains = allowedDomains,
+                timeoutMs = timeoutMs,
+                callbackScheme = callbackScheme,
+                allowedPorts = allowedPorts,
+                maxUrlLengthBytes = maxUrlLengthBytes,
+                headerBackground = headerBackground,
+                headerText = headerText,
+                accent = accent,
+                closeIconTint = closeIconTint,
+                cornerRadius = cornerRadius,
+                title = title,
+                callbacks = SEABridgePresenter.BridgeCallbacks(
+                    onCaptured = { paramsJson ->
+                        val map = Arguments.createMap().apply {
+                            try {
+                                val json = JSONObject(paramsJson)
+                                json.keys().forEach { key ->
+                                    putString(key, json.getString(key))
+                                }
+                            } catch (_: Exception) {}
+                        }
+                        emitTerminal("onCaptured", map)
+                    },
+                    onCancelled = { emitTerminal("onCancelled", null) },
+                    onError = { code, message ->
+                        val data = WritableNativeMap().apply {
+                            putString("code", code)
+                            if (message != null) putString("message", message)
+                        }
+                        emitTerminal("onError", data)
                     }
-                    emitTerminal("onCaptured", map)
-                },
-                onCancelled = { emitTerminal("onCancelled", null) },
-                onError = { code, message ->
-                    val data = WritableNativeMap().apply {
-                        putString("code", code)
-                        if (message != null) putString("message", message)
-                    }
-                    emitTerminal("onError", data)
-                }
+                )
             )
-        )
+        }
+
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            block.run()
+        } else {
+            Handler(Looper.getMainLooper()).post(block)
+        }
     }
 
     override fun onAttachedToWindow() {

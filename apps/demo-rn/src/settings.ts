@@ -1,4 +1,5 @@
 import { ALLOWED_DOMAINS, MOCK_AUTHORIZE_URL } from './mockGateway';
+import { getSEAConfigDefaults } from './seaConfigDefaults';
 
 /**
  * Tester-facing configuration for the demo harness (mirrors
@@ -11,22 +12,52 @@ import { ALLOWED_DOMAINS, MOCK_AUTHORIZE_URL } from './mockGateway';
  */
 export type Settings = Readonly<{
   gatewayBaseURL: string;
+  appVersionKey: string;
+  callbackScheme: string;
   allowedDomains: string;
+  allowedPorts: string;
+  maxUrlLengthBytes: number;
   presentation: 'sheet' | 'fullscreen';
   timeoutMs: number;
   useMockGateway: boolean;
   mockRedirectURL: string;
 }>;
 
-export const DEFAULT_SETTINGS: Settings = {
-  // Our own gateway.ts <-> local backend traffic. Not passed to SEACore.
-  gatewayBaseURL: 'http://localhost:8080',
-  allowedDomains: ALLOWED_DOMAINS.join(','),
-  presentation: 'sheet',
-  timeoutMs: 120_000,
-  useMockGateway: true,
-  mockRedirectURL: MOCK_AUTHORIZE_URL,
-};
+function buildDefaults(): Settings {
+  try {
+    const native = getSEAConfigDefaults();
+    return {
+      gatewayBaseURL: 'https://showcase-client-gw.demo.proxym-it.net',
+      appVersionKey: '4ZvAEYVC2Xk3',
+      callbackScheme: native.callbackScheme,
+      allowedDomains: native.authDomains,
+      allowedPorts: native.allowedPorts,
+      maxUrlLengthBytes: native.maxUrlLengthBytes,
+      presentation: 'sheet',
+      timeoutMs: 120_000,
+      useMockGateway: true,
+      mockRedirectURL: MOCK_AUTHORIZE_URL,
+    };
+  } catch {
+    // NativeModule unavailable (iOS / test) — use hardcoded fallbacks.
+    return {
+      gatewayBaseURL: 'http://localhost:8080',
+      appVersionKey: '4ZvAEYVC2Xk3',
+      callbackScheme: 'bankerise-auth',
+      allowedDomains: ALLOWED_DOMAINS.join(','),
+      allowedPorts: '-1,443',
+      maxUrlLengthBytes: 2048,
+      presentation: 'sheet',
+      timeoutMs: 120_000,
+      useMockGateway: true,
+      mockRedirectURL: MOCK_AUTHORIZE_URL,
+    };
+  }
+}
+
+export const DEFAULT_SETTINGS: Settings = buildDefaults();
+console.log('DEFAULT_SETTINGS ', DEFAULT_SETTINGS);
+
 
 /** Comma list -> trimmed, non-empty array, in the shape SEAConfig expects. */
 export function allowedDomainsArray(settings: Settings): string[] {

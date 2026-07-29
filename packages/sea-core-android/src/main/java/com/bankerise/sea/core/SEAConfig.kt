@@ -47,5 +47,17 @@ data class SEAConfig(
     val timeoutMs: Long = 120_000L,
 
     /** Screen-recording capture policy (§8 / spec §17.1). Default [SEACapturePolicy.WARN]. */
-    val capturePolicy: SEACapturePolicy = SEACapturePolicy.WARN
+    val capturePolicy: SEACapturePolicy = SEACapturePolicy.WARN,
+
+    /**
+     * Allowed ports for the authorize URL (§6.2).
+     * -1 means the port is unset (standard HTTPS). Default: setOf(-1, 443).
+     */
+    val allowedPorts: Set<Int> = setOf(-1, 443),
+
+    /**
+     * Maximum byte length of the authorize URL string (§6.2).
+     * URLs exceeding this are rejected. Default: 2048.
+     */
+    val maxUrlLengthBytes: Int = 2048
 )

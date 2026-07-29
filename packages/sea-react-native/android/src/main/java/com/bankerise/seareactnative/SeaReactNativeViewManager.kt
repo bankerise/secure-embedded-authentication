@@ -71,6 +71,23 @@ class SeaReactNativeViewManager : SimpleViewManager<SeaReactNativeView>() {
         } ?: emptyList()
     }
 
+    @ReactProp(name = "callbackScheme")
+    fun setCallbackScheme(view: SeaReactNativeView, scheme: String?) {
+        view.callbackScheme = scheme ?: ""
+    }
+
+    @ReactProp(name = "allowedPorts")
+    fun setAllowedPorts(view: SeaReactNativeView, ports: ReadableArray?) {
+        view.allowedPorts = ports?.let { array ->
+            (0 until array.size()).map { array.getInt(it) }.toSet()
+        } ?: emptySet()
+    }
+
+    @ReactProp(name = "maxUrlLengthBytes", defaultInt = 2048)
+    fun setMaxUrlLengthBytes(view: SeaReactNativeView, max: Int) {
+        view.maxUrlLengthBytes = max
+    }
+
     @ReactProp(name = "appearance")
     fun setAppearance(view: SeaReactNativeView, appearance: ReadableMap?) {
         if (appearance == null) return

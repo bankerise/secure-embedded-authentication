@@ -33,6 +33,9 @@ object SEABridgePresenter {
         presentation: String,
         allowedDomains: List<String>,
         timeoutMs: Int,
+        callbackScheme: String,
+        allowedPorts: Set<Int>,
+        maxUrlLengthBytes: Int,
         headerBackground: Int?,
         headerText: Int?,
         accent: Int?,
@@ -58,7 +61,7 @@ object SEABridgePresenter {
 
         val config = SEAConfig(
             authorizeUrl = url,
-            callbackScheme = SEAEnvironment.current.callbackScheme,
+            callbackScheme = callbackScheme.ifEmpty { SEAEnvironment.current.callbackScheme },
             allowedDomains = allowedDomains,
             presentation = if (presentation == "fullscreen") {
                 SEAPresentation.FULLSCREEN
@@ -66,7 +69,9 @@ object SEABridgePresenter {
                 SEAPresentation.SHEET
             },
             appearance = appearance,
-            timeoutMs = if (timeoutMs > 0) timeoutMs.toLong() else 120_000L
+            timeoutMs = if (timeoutMs > 0) timeoutMs.toLong() else 120_000L,
+            allowedPorts = allowedPorts.ifEmpty { setOf(-1, 443) },
+            maxUrlLengthBytes = if (maxUrlLengthBytes > 0) maxUrlLengthBytes else 2048
         )
 
         val seaCallbacks = SEASession.Callbacks(

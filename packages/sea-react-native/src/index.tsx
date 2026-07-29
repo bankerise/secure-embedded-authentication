@@ -38,6 +38,9 @@ export type SecureAuthenticationViewProps = Readonly<{
   appearance?: SEAAppearance;
   allowedDomains?: ReadonlyArray<string>;
   timeoutMs?: number;
+  callbackScheme?: string;
+  allowedPorts?: ReadonlyArray<number>;
+  maxUrlLengthBytes?: number;
   onCaptured?: (params: Readonly<Record<string, string>>) => void;
   onCancelled?: () => void;
   onError?: (error: SEAError) => void;

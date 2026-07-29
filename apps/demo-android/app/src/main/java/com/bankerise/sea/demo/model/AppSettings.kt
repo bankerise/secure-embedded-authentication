@@ -102,7 +102,7 @@ class AppSettings private constructor(context: Context) {
         private object DEFAULTS {
             const val gatewayBaseUrl = "https://auth-retail.demo.proxym-it.net"
             const val callbackScheme = "bankerise-auth"
-            const val allowedDomains = "auth.bank.local,localhost,10.0.2.2,auth-retail.demo.proxym-it.net"
+            const val allowedDomains = "auth.bank.local,localhost,10.0.2.2,auth-retail.demo.proxym-it.net,platform-keycloak.pres.proxym-it.net"
             const val presentation = "SHEET"
             const val timeoutMs = 120_000L
             const val useMockGateway = true
