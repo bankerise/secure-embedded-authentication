@@ -62,6 +62,15 @@ export interface NativeProps extends ViewProps {
 
   timeoutMs?: Int32;
 
+  // Custom scheme the callback redirect uses (§6.3).
+  callbackScheme?: string;
+
+  // Allowed ports for the authorize URL (§6.2). -1 = unset (standard HTTPS).
+  allowedPorts?: ReadonlyArray<Int32>;
+
+  // Maximum byte length of the authorize URL string (§6.2).
+  maxUrlLengthBytes?: Int32;
+
   onCaptured?: DirectEventHandler<CapturedNativeEvent>;
   onCancelled?: DirectEventHandler<CancelledNativeEvent>;
   onError?: DirectEventHandler<ErrorNativeEvent>;

@@ -70,10 +70,12 @@ object SEASession {
 
         val environment = SEAEnvironment.current
         val validation = SEAAuthorizeURLValidator.validate(
-            config.authorizeUrl, environment, config.allowedDomains
+            config.authorizeUrl, environment, config.allowedDomains,
+            config.allowedPorts, config.maxUrlLengthBytes
         )
         if (validation.isFailure) {
-            val reason = validation.exceptionOrNull() as? InvalidUrlReason
+            val exception = validation.exceptionOrNull()
+            val reason = (exception as? InvalidUrlException)?.reason
                 ?: InvalidUrlReason.MALFORMED
             callbacks.onError(SEAError.InvalidAuthorizeUrl(reason))
             return null

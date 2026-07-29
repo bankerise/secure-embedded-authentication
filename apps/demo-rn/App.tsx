@@ -24,6 +24,13 @@ import { ResultScreen } from './src/screens/ResultScreen';
 import { TelemetryScreen, type TelemetryEntry } from './src/screens/TelemetryScreen';
 import { TabBar, type TabKey } from './src/TabBar';
 
+function parsePorts(portsStr: string): number[] {
+  return portsStr
+    .split(',')
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => !isNaN(n));
+}
+
 function App(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<TabKey>('config');
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
@@ -60,18 +67,25 @@ function App(): React.JSX.Element {
     try {
       const start = settings.useMockGateway
         ? await startMockAuthorization(settings.mockRedirectURL)
-        : await startRealAuthorization(settings.gatewayBaseURL);
+        : await startRealAuthorization(settings.gatewayBaseURL, settings.appVersionKey);
+        
       setAuthorizeUrl(start.authorizeUrl);
       // Remember what Logout needs from this session (authorize URL + mock flag).
       session.beginSession(start.authorizeUrl, settings.useMockGateway);
     } catch (error) {
+      console.log('error ', error);
+      
       setLastStartError(error instanceof Error ? error.message : String(error));
     } finally {
       setIsRunning(false);
     }
   }, [isRunning, settings, session]);
 
-  const dismiss = useCallback(() => setAuthorizeUrl(null), []);
+  const dismiss = useCallback(() => {
+    console.log('dismiss');
+    
+    // setAuthorizeUrl(null)
+  }, []);
 
   const onPurgeWebData = useCallback(() => {
     setPurgeMessage('Purging…');
@@ -79,7 +93,7 @@ function App(): React.JSX.Element {
       setPurgeMessage(`Purged at ${new Date().toLocaleTimeString()}`);
     });
   }, []);
-
+  
   return (
     <SafeAreaView style={styles.root}>
       {activeTab === 'config' && (
@@ -115,6 +129,9 @@ function App(): React.JSX.Element {
           authMode={settings.authMode}
           allowedDomains={allowedDomainsArray(settings)}
           timeoutMs={settings.timeoutMs}
+          callbackScheme={settings.callbackScheme}
+          allowedPorts={parsePorts(settings.allowedPorts)}
+          maxUrlLengthBytes={settings.maxUrlLengthBytes}
           onCaptured={(params) => {
             setResult({ kind: 'captured', params, at: Date.now() });
             // Mock path only: exchange the code so Logout has an id_token_hint.
@@ -122,10 +139,12 @@ function App(): React.JSX.Element {
             dismiss();
           }}
           onCancelled={() => {
+            console.log('onCancelled ');
             setResult({ kind: 'cancelled', at: Date.now() });
             dismiss();
           }}
           onError={(error) => {
+            console.log('onError ', error);
             setResult({ kind: 'error', error, at: Date.now() });
             dismiss();
           }}

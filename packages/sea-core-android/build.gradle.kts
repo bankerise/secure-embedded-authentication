@@ -39,7 +39,7 @@ android {
             buildConfigField(
                 "String[]",
                 "COMPILED_AUTH_DOMAINS",
-                """{"auth.bank.com", "auth-staging.bank.com", "localhost", "auth.bank.local", "10.0.2.2", "auth-retail.demo.proxym-it.net"}"""
+                """{"auth.bank.com", "auth-staging.bank.com", "localhost", "auth.bank.local", "10.0.2.2", "auth-retail.demo.proxym-it.net", "platform-keycloak.pres.proxym-it.net"}"""
             )
             buildConfigField("String", "COMPILED_CALLBACK_SCHEME", "\"bkrmob\"")
         }
