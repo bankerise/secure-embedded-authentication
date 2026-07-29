@@ -111,6 +111,8 @@ function App(): React.JSX.Element {
           allowedPorts={parsePorts(settings.allowedPorts)}
           maxUrlLengthBytes={settings.maxUrlLengthBytes}
           onCaptured={(params) => {
+            console.log('onCaptured ', params);
+            
             setResult({ kind: 'captured', params, at: Date.now() });
             // Mock path only: exchange the code so Logout has an id_token_hint.
             session.handleCaptured(params);
