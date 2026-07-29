@@ -15,7 +15,7 @@ import {
   subscribeToTelemetry,
 } from '@bankerise-platform/sea-react-native';
 import { startAuthorization as startMockAuthorization } from './src/mockGateway';
-import { startAuthorization as startRealAuthorization } from './src/gateway';
+import { getCurrentUser, startAuthorization as startRealAuthorization } from './src/gateway';
 import { allowedDomainsArray, DEFAULT_SETTINGS, type Settings } from './src/settings';
 import type { Result } from './src/types';
 import { useSessionLogout } from './src/useSessionLogout';
@@ -83,8 +83,8 @@ function App(): React.JSX.Element {
 
   const dismiss = useCallback(() => {
     console.log('dismiss');
-    
-    // setAuthorizeUrl(null)
+    setAuthorizeUrl(null)
+    getCurrentUser();
   }, []);
 
   const onPurgeWebData = useCallback(() => {

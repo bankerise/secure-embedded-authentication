@@ -28,10 +28,30 @@ async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
   try {
     return JSON.parse(body) as T;
   } catch (error) {
-    throw new GatewayError(`Failed to decode gateway response: ${String(error)}`);
+    throw new GatewayError(
+      `Failed to decode gateway response: ${String(error)}`,
+    );
   }
 }
 
+export function getCurrentUser() {
+  fetch('http://showcase-ebanking-ui.local.proxym-it.tn/secured/users/me', {
+    method: 'GET',
+    credentials: 'include', // Send browser cookies automatically
+    headers: {
+      Accept: 'application/json, text/plain, */*',
+      'Accept-Language': 'ar',
+    },
+  })
+    .then(async response => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+      return response.json();
+    })
+    .then(data => console.log('data ', data))
+    .catch(err => console.error('Error ', err));
+}
 
 /**
  * Real implementation of the §6.1 two-hop gateway start sequence. Mirrors
@@ -41,7 +61,7 @@ async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
  */
 export async function startAuthorization(
   gatewayBaseURL: string,
-  appVersionKey: string = DEFAULT_APP_VERSION_KEY
+  appVersionKey: string = DEFAULT_APP_VERSION_KEY,
 ): Promise<GatewayStartResult> {
   const base = gatewayBaseURL.replace(/\/+$/, '');
 
@@ -58,15 +78,19 @@ export async function startAuthorization(
     });
   } catch (error) {
     if (error instanceof GatewayError) throw error;
-    throw new GatewayError(`Invalid gateway base URL or network error: ${String(error)}`);
+    throw new GatewayError(
+      `Invalid gateway base URL or network error: ${String(error)}`,
+    );
   }
 
   const redirectUrl = new URL(start.redirect, `${base}/`).toString();
   console.log('redirectUrl ', redirectUrl);
-  
-  const redirect = await getJSON<RedirectResponse>(redirectUrl, { method: 'GET' });
+
+  const redirect = await getJSON<RedirectResponse>(redirectUrl, {
+    method: 'GET',
+  });
   console.log('redirect ', redirect);
-  
+
   return {
     authorizeUrl: redirect.redirectUrl,
     // §21: authMode absent from the real response entirely -> absent means EMBEDDED.
