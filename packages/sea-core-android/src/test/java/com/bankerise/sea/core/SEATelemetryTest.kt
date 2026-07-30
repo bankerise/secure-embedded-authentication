@@ -9,35 +9,35 @@ class SEATelemetryTest {
 
     @Test
     fun `hostHash is deterministic`() {
-        val h1 = SEATelemetry.hostHash("auth.bank.com")
-        val h2 = SEATelemetry.hostHash("auth.bank.com")
+        val h1 = SEATelemetry.hostHash("auth.example.com")
+        val h2 = SEATelemetry.hostHash("auth.example.com")
         assertEquals(h1, h2)
     }
 
     @Test
     fun `hostHash is 16 hex chars`() {
-        val hash = SEATelemetry.hostHash("auth.bank.com")
+        val hash = SEATelemetry.hostHash("auth.example.com")
         assertEquals(16, hash.length)
         assertTrue(hash.all { it in '0'..'9' || it in 'a'..'f' })
     }
 
     @Test
     fun `hostHash normalizes case`() {
-        val h1 = SEATelemetry.hostHash("AUTH.BANK.COM")
-        val h2 = SEATelemetry.hostHash("auth.bank.com")
+        val h1 = SEATelemetry.hostHash("AUTH.EXAMPLE.COM")
+        val h2 = SEATelemetry.hostHash("auth.example.com")
         assertEquals(h1, h2)
     }
 
     @Test
     fun `hostHash strips trailing dot`() {
-        val h1 = SEATelemetry.hostHash("auth.bank.com.")
-        val h2 = SEATelemetry.hostHash("auth.bank.com")
+        val h1 = SEATelemetry.hostHash("auth.example.com.")
+        val h2 = SEATelemetry.hostHash("auth.example.com")
         assertEquals(h1, h2)
     }
 
     @Test
     fun `different hosts produce different hashes`() {
-        val h1 = SEATelemetry.hostHash("auth.bank.com")
+        val h1 = SEATelemetry.hostHash("auth.example.com")
         val h2 = SEATelemetry.hostHash("evil.com")
         assertNotEquals(h1, h2)
     }
@@ -86,10 +86,10 @@ class SEATelemetryTest {
     fun `no event property contains a raw host`() {
         // Verify that hostHash is the only way hosts appear in properties
         val properties = mapOf(
-            "host_hash" to SEATelemetry.hostHash("auth.bank.com"),
+            "host_hash" to SEATelemetry.hostHash("auth.example.com"),
             "scheme" to "https"
         )
-        assertTrue("auth.bank.com" !in properties.values)
+        assertTrue("auth.example.com" !in properties.values)
     }
 
     @Test

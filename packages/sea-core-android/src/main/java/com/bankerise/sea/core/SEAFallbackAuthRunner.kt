@@ -79,7 +79,7 @@ internal class SEAFallbackAuthRunner(
         )
 
         // Build a callback URI that the browser can redirect back to.
-        // The custom-scheme redirect (bkrmob://callback) won't work from
+        // A custom-scheme redirect (e.g., myapp://callback) won't work from
         // an external browser, so we use a special HTTPS URL that the host
         // app should handle via Associated Domains or intent filters.
         // For now, we use a dummy callback URL and rely on the user

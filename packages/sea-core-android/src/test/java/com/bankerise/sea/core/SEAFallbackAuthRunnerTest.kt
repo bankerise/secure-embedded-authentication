@@ -23,13 +23,13 @@ class SEAFallbackAuthRunnerTest {
     fun setup() {
         activity = mock(Activity::class.java)
         config = SEAConfig(
-            authorizeUrl = Uri.parse("https://auth.bank.local/realms/bankerise-mobile/protocol/openid-connect/auth?client_id=sea-dev-public&redirect_uri=bkrmob%3A%2F%2Fcallback&response_type=code&scope=openid&state=devstate123"),
-            callbackScheme = "bkrmob",
-            allowedDomains = listOf("auth.bank.local")
+            authorizeUrl = Uri.parse("https://auth.example.local/realms/test-realm/protocol/openid-connect/auth?client_id=test-client&redirect_uri=seacb%3A%2F%2Fcallback&response_type=code&scope=openid&state=devstate123"),
+            callbackScheme = "seacb",
+            allowedDomains = listOf("auth.example.local")
         )
         environment = SEAEnvironment(
-            authDomains = setOf("auth.bank.local"),
-            callbackScheme = "bkrmob"
+            authDomains = setOf("auth.example.local"),
+            callbackScheme = "seacb"
         )
         callbacks = SEASession.Callbacks(
             onCaptured = { capturedParams = it },
@@ -47,7 +47,7 @@ class SEAFallbackAuthRunnerTest {
     @Test
     fun `start with empty callbackScheme fires webauthnUnavailable error`() {
         val emptySchemeEnv = SEAEnvironment(
-            authDomains = setOf("auth.bank.local"),
+            authDomains = setOf("auth.example.local"),
             callbackScheme = ""
         )
         val runner = SEAFallbackAuthRunner(activity, config, emptySchemeEnv, callbacks)
@@ -98,7 +98,7 @@ class SEAFallbackAuthRunnerTest {
 
     @Test
     fun `handleResult with RESULT_OK and callback URI fires onCaptured`() {
-        val callbackUri = Uri.parse("bkrmob://callback?code=test_code&state=test_state")
+        val callbackUri = Uri.parse("seacb://callback?code=test_code&state=test_state")
         val data = mock(Intent::class.java)
         `when`(data.data).thenReturn(callbackUri)
 

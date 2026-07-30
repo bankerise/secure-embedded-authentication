@@ -23,7 +23,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:scheme="bkrmob"
+                    android:scheme="${seaCallbackScheme}"
                     android:host="callback" />
             </intent-filter>
         </activity>

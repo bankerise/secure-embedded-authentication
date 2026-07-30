@@ -10,8 +10,8 @@ class SEAConfigTests {
     @Test
     fun `default presentation is SHEET`() {
         val config = SEAConfig(
-            authorizeUrl = Uri.parse("https://auth.bank.com/auth"),
-            callbackScheme = "bankerise-auth"
+            authorizeUrl = Uri.parse("https://auth.example.com/auth"),
+            callbackScheme = "seacb"
         )
         assertEquals(SEAPresentation.SHEET, config.presentation)
     }
@@ -19,8 +19,8 @@ class SEAConfigTests {
     @Test
     fun `default timeout is 120000ms`() {
         val config = SEAConfig(
-            authorizeUrl = Uri.parse("https://auth.bank.com/auth"),
-            callbackScheme = "bankerise-auth"
+            authorizeUrl = Uri.parse("https://auth.example.com/auth"),
+            callbackScheme = "seacb"
         )
         assertEquals(120_000L, config.timeoutMs)
     }
@@ -28,8 +28,8 @@ class SEAConfigTests {
     @Test
     fun `default capturePolicy is WARN`() {
         val config = SEAConfig(
-            authorizeUrl = Uri.parse("https://auth.bank.com/auth"),
-            callbackScheme = "bankerise-auth"
+            authorizeUrl = Uri.parse("https://auth.example.com/auth"),
+            callbackScheme = "seacb"
         )
         assertEquals(SEACapturePolicy.WARN, config.capturePolicy)
     }
@@ -37,8 +37,8 @@ class SEAConfigTests {
     @Test
     fun `default allowedDomains is empty`() {
         val config = SEAConfig(
-            authorizeUrl = Uri.parse("https://auth.bank.com/auth"),
-            callbackScheme = "bankerise-auth"
+            authorizeUrl = Uri.parse("https://auth.example.com/auth"),
+            callbackScheme = "seacb"
         )
         assertTrue(config.allowedDomains.isEmpty())
     }
@@ -54,9 +54,9 @@ class SEAConfigTests {
     @Test
     fun `all fields roundtrip through data class copy`() {
         val config = SEAConfig(
-            authorizeUrl = Uri.parse("https://auth.bank.com/auth"),
-            callbackScheme = "bankerise-auth",
-            allowedDomains = listOf("auth.bank.com"),
+            authorizeUrl = Uri.parse("https://auth.example.com/auth"),
+            callbackScheme = "seacb",
+            allowedDomains = listOf("auth.example.com"),
             presentation = SEAPresentation.FULLSCREEN,
             timeoutMs = 60_000L,
             capturePolicy = SEACapturePolicy.BLOCK_INPUT
