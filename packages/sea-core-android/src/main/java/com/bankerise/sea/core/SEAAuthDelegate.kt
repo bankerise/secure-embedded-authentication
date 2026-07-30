@@ -202,8 +202,8 @@ internal class SEAAuthDelegate(
             })
 
             // Close button (circular gray background, fixed at end)
-            val btnSize = dpToPx(parent, 36)
-            val iconInset = dpToPx(parent, 8)
+            val btnSize = dpToPx(parent, 24)
+            val iconInset = dpToPx(parent, 6)
             val closeBtn = android.widget.ImageButton(parent.context).apply {
                 setImageDrawable(
                     InsetDrawable(
@@ -217,6 +217,17 @@ internal class SEAAuthDelegate(
                     shape = GradientDrawable.OVAL
                     setColor(Color.parseColor("#E0E0E0"))
                 }
+
+                setPadding(0, 0, 0, 0)
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+
+                layoutParams = LinearLayout.LayoutParams(btnSize, btnSize).apply {
+                    marginStart = dpToPx(parent, 8)
+                    marginEnd = dpToPx(parent, 8)   // Padding from the right
+                    topMargin = dpToPx(parent, 4)
+                    bottomMargin = dpToPx(parent, 4)
+                }
+
                 setOnClickListener { headerCloseTapped() }
                 contentDescription = SEAStrings.actionClose(context)
             }
