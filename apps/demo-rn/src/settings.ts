@@ -28,7 +28,7 @@ export type Settings = Readonly<{
 
 function buildDefaults(): Settings {
   return {
-    gatewayBaseURL: 'https://showcase-client-gw.demo.proxym-it.net',
+    gatewayBaseURL: 'http://localhost:8080',
     appVersionKey: '4ZvAEYVC2Xk3',
     callbackScheme: 'bkrmob',
     allowedDomains: ALLOWED_DOMAINS.join(','),
