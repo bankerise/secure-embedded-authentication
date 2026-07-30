@@ -16,6 +16,7 @@ import java.util.Properties
  *   authDomains        – Comma-separated list of allowed host domains
  *   allowedPorts       – Comma-separated list of allowed ports (-1 = unset)
  *   maxUrlLengthBytes  – Max byte length of the authorize URL string
+ *   allowedSchemes     – Comma-separated list of allowed URI schemes (default: https)
  */
 object SEAPropertiesLoader {
 
@@ -51,7 +52,11 @@ object SEAPropertiesLoader {
             allowedPorts = parseCommaList(props.getProperty("allowedPorts", "-1,443"))
                 .mapNotNull { it.toIntOrNull() }
                 .toSet(),
-            maxUrlLengthBytes = props.getProperty("maxUrlLengthBytes", "2048").toIntOrNull() ?: 2048
+            maxUrlLengthBytes = props.getProperty("maxUrlLengthBytes", "2048").toIntOrNull() ?: 2048,
+            allowedSchemes = parseCommaList(props.getProperty("allowedSchemes", "https"))
+                .map { it.trim().lowercase() }
+                .toSet()
+                .ifEmpty { setOf("https") }
         )
     }
 

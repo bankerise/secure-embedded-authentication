@@ -74,7 +74,7 @@ object SEASession {
         )
         val validation = SEAAuthorizeURLValidator.validate(
             config.authorizeUrl, environment, config.allowedDomains,
-            config.allowedPorts, config.maxUrlLengthBytes
+            config.allowedPorts, config.maxUrlLengthBytes, config.allowedSchemes
         )
         if (validation.isFailure) {
             val exception = validation.exceptionOrNull()

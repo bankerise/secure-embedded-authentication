@@ -49,6 +49,27 @@ class SEAAuthorizeURLValidatorTest {
         assertTrue(result.isSuccess)
     }
 
+    @Test
+    fun `accepts http scheme when allowed`() {
+        val url = Uri.parse("http://auth.example.com/realms/test/protocol/openid-connect/auth")
+        val result = SEAAuthorizeURLValidator.validate(
+            url, prodEnv, emptyList(),
+            allowedSchemes = setOf("http", "https")
+        )
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun `rejects http when allowedSchemes is https-only`() {
+        val url = Uri.parse("http://auth.example.com/realms/test/protocol/openid-connect/auth")
+        val result = SEAAuthorizeURLValidator.validate(
+            url, prodEnv, emptyList(),
+            allowedSchemes = setOf("https")
+        )
+        assertTrue(result.isFailure)
+        assertEquals(InvalidUrlReason.SCHEME, (result.exceptionOrNull() as? InvalidUrlException)?.reason)
+    }
+
     // ---- Rule 2: no userinfo ----
 
     @Test

@@ -44,13 +44,6 @@ function App(): React.JSX.Element {
   const [result, setResult] = useState<Result>({ kind: 'idle' });
   const session = useSessionLogout(settings);
 
-  // useEffect(() => {
-  //   getCurrentUser(
-  //             settings.gatewayBaseURL,
-  //             settings.appVersionKey,
-  //           );
-  // }, [])
-
   const onChangeSettings = useCallback((patch: Partial<Settings>) => {
     setSettings(prev => ({ ...prev, ...patch }));
   }, []);
