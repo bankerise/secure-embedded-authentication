@@ -13,14 +13,9 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
 
-        // Build-config-selected compiled environment (§7.1, §6.2).
-        // mirrors iOS's #if SEA_ENV_PRODUCTION / SEA_ENV_STAGING / #else DEBUG.
-        buildConfigField(
-            "String[]",
-            "COMPILED_AUTH_DOMAINS",
-            """{"auth.bank.com"}"""
-        )
-        buildConfigField("String", "COMPILED_CALLBACK_SCHEME", "\"bankerise-auth\"")
+        // Manifest placeholder for the callback scheme — host app overrides
+        // this with its own scheme in its build.gradle.kts.
+        manifestPlaceholders["seaCallbackScheme"] = "sea-default-callback"
     }
 
     buildTypes {
@@ -32,21 +27,7 @@ android {
             )
         }
         debug {
-            // DEV ONLY, structurally unable to escape a release build:
-            // the local TLS Keycloak (infra/) and the demo harness authenticate
-            // against these. BuildConfig.DEBUG is false in any release
-            // configuration, so no release binary can ever have these domains.
-            buildConfigField(
-                "String[]",
-                "COMPILED_AUTH_DOMAINS",
-                """{"auth.bank.com", "auth-staging.bank.com", "localhost", "auth.bank.local", "10.0.2.2", "auth-retail.demo.proxym-it.net", "platform-keycloak.pres.proxym-it.net"}"""
-            )
-            buildConfigField("String", "COMPILED_CALLBACK_SCHEME", "\"bkrmob\"")
         }
-    }
-
-    buildFeatures {
-        buildConfig = true
     }
 
     compileOptions {

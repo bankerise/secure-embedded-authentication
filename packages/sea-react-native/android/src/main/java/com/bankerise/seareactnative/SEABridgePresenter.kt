@@ -6,7 +6,6 @@ import android.util.Log
 import com.bankerise.sea.core.SEAConfig
 import com.bankerise.sea.core.SEAAppearance
 import com.bankerise.sea.core.SEAError
-import com.bankerise.sea.core.SEAEnvironment
 import com.bankerise.sea.core.SEAPresentation
 import com.bankerise.sea.core.SEASession
 import org.json.JSONObject
@@ -62,7 +61,7 @@ object SEABridgePresenter {
 
         val config = SEAConfig(
             authorizeUrl = url,
-            callbackScheme = callbackScheme.ifEmpty { SEAEnvironment.current.callbackScheme },
+            callbackScheme = callbackScheme,
             allowedDomains = allowedDomains,
             presentation = if (presentation == "fullscreen") {
                 SEAPresentation.FULLSCREEN

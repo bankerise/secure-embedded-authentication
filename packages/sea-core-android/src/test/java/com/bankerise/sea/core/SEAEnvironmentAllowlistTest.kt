@@ -9,18 +9,18 @@ class SEAEnvironmentAllowlistTest {
     @Test
     fun `empty narrow list returns compiled set`() {
         val env = SEAEnvironment(
-            authDomains = setOf("auth.bank.com", "localhost"),
-            callbackScheme = "bankerise-auth"
+            authDomains = setOf("auth.example.com", "localhost"),
+            callbackScheme = "seacb"
         )
         val effective = env.effectiveAllowlist(emptyList())
-        assertEquals(setOf("auth.bank.com", "localhost"), effective)
+        assertEquals(setOf("auth.example.com", "localhost"), effective)
     }
 
     @Test
     fun `narrowing works`() {
         val env = SEAEnvironment(
-            authDomains = setOf("auth.bank.com", "localhost"),
-            callbackScheme = "bankerise-auth"
+            authDomains = setOf("auth.example.com", "localhost"),
+            callbackScheme = "seacb"
         )
         val effective = env.effectiveAllowlist(listOf("localhost"))
         assertEquals(setOf("localhost"), effective)
@@ -29,8 +29,8 @@ class SEAEnvironmentAllowlistTest {
     @Test
     fun `widening is impossible`() {
         val env = SEAEnvironment(
-            authDomains = setOf("auth.bank.com"),
-            callbackScheme = "bankerise-auth"
+            authDomains = setOf("auth.example.com"),
+            callbackScheme = "seacb"
         )
         val effective = env.effectiveAllowlist(listOf("evil.com"))
         assertTrue(effective.isEmpty())
@@ -39,8 +39,8 @@ class SEAEnvironmentAllowlistTest {
     @Test
     fun `disjoint list yields empty set`() {
         val env = SEAEnvironment(
-            authDomains = setOf("auth.bank.com"),
-            callbackScheme = "bankerise-auth"
+            authDomains = setOf("auth.example.com"),
+            callbackScheme = "seacb"
         )
         val effective = env.effectiveAllowlist(listOf("other.com", "another.com"))
         assertTrue(effective.isEmpty())
@@ -48,12 +48,12 @@ class SEAEnvironmentAllowlistTest {
 
     @Test
     fun `normalizeHost lowercases`() {
-        assertEquals("auth.bank.com", SEAEnvironment.normalizeHost("AUTH.BANK.COM"))
+        assertEquals("auth.example.com", SEAEnvironment.normalizeHost("AUTH.EXAMPLE.COM"))
     }
 
     @Test
     fun `normalizeHost strips trailing dot`() {
-        assertEquals("auth.bank.com", SEAEnvironment.normalizeHost("auth.bank.com."))
+        assertEquals("auth.example.com", SEAEnvironment.normalizeHost("auth.example.com."))
     }
 
     @Test

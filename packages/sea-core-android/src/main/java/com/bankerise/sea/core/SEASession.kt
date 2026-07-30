@@ -68,7 +68,10 @@ object SEASession {
     ): android.content.Intent? {
         SEAThread.assertMain()
 
-        val environment = SEAEnvironment.current
+        val environment = SEAEnvironment(
+            authDomains = config.allowedDomains.mapTo(HashSet()) { SEAEnvironment.normalizeHost(it) },
+            callbackScheme = config.callbackScheme
+        )
         val validation = SEAAuthorizeURLValidator.validate(
             config.authorizeUrl, environment, config.allowedDomains,
             config.allowedPorts, config.maxUrlLengthBytes
@@ -110,7 +113,10 @@ object SEASession {
 
         // Check if we're using fallback path
         if (intent.getBooleanExtra(SEAAuthActivity.EXTRA_USE_FALLBACK, false)) {
-            val environment = SEAEnvironment.current
+            val environment = SEAEnvironment(
+                authDomains = config.allowedDomains.mapTo(HashSet()) { SEAEnvironment.normalizeHost(it) },
+                callbackScheme = config.callbackScheme
+            )
             val runner = SEAFallbackAuthRunner(activity, config, environment, callbacks)
             pendingFallbackRunner = runner
             runner.start()

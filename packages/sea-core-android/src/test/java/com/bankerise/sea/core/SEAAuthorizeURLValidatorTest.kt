@@ -8,20 +8,20 @@ import org.junit.Test
 class SEAAuthorizeURLValidatorTest {
 
     private val prodEnv = SEAEnvironment(
-        authDomains = setOf("auth.bank.com"),
-        callbackScheme = "bankerise-auth"
+        authDomains = setOf("auth.example.com"),
+        callbackScheme = "seacb"
     )
 
     private val devEnv = SEAEnvironment(
-        authDomains = setOf("auth.bank.com", "localhost", "auth.bank.local"),
-        callbackScheme = "bankerise-auth"
+        authDomains = setOf("auth.example.com", "localhost", "auth.example.local"),
+        callbackScheme = "seacb"
     )
 
     // ---- Rule 1: scheme == https ----
 
     @Test
     fun `rejects http scheme`() {
-        val url = Uri.parse("http://auth.bank.com/realms/test/protocol/openid-connect/auth")
+        val url = Uri.parse("http://auth.example.com/realms/test/protocol/openid-connect/auth")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isFailure)
         assertEquals(InvalidUrlReason.SCHEME, (result.exceptionOrNull() as? InvalidUrlException)?.reason)
@@ -29,7 +29,7 @@ class SEAAuthorizeURLValidatorTest {
 
     @Test
     fun `rejects ftp scheme`() {
-        val url = Uri.parse("ftp://auth.bank.com/realms/test/protocol/openid-connect/auth")
+        val url = Uri.parse("ftp://auth.example.com/realms/test/protocol/openid-connect/auth")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isFailure)
         assertEquals(InvalidUrlReason.SCHEME, (result.exceptionOrNull() as? InvalidUrlException)?.reason)
@@ -44,7 +44,7 @@ class SEAAuthorizeURLValidatorTest {
 
     @Test
     fun `accepts https scheme`() {
-        val url = Uri.parse("https://auth.bank.com/realms/test/protocol/openid-connect/auth")
+        val url = Uri.parse("https://auth.example.com/realms/test/protocol/openid-connect/auth")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isSuccess)
     }
@@ -53,7 +53,7 @@ class SEAAuthorizeURLValidatorTest {
 
     @Test
     fun `rejects url with userinfo`() {
-        val url = Uri.parse("https://auth.bank.com@evil.io/path")
+        val url = Uri.parse("https://auth.example.com@evil.io/path")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isFailure)
         assertEquals(InvalidUrlReason.USERINFO, (result.exceptionOrNull() as? InvalidUrlException)?.reason)
@@ -63,7 +63,7 @@ class SEAAuthorizeURLValidatorTest {
 
     @Test
     fun `rejects non-standard port`() {
-        val url = Uri.parse("https://auth.bank.com:8443/path")
+        val url = Uri.parse("https://auth.example.com:8443/path")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isFailure)
         assertEquals(InvalidUrlReason.PORT, (result.exceptionOrNull() as? InvalidUrlException)?.reason)
@@ -71,14 +71,14 @@ class SEAAuthorizeURLValidatorTest {
 
     @Test
     fun `accepts port 443`() {
-        val url = Uri.parse("https://auth.bank.com:443/path")
+        val url = Uri.parse("https://auth.example.com:443/path")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isSuccess)
     }
 
     @Test
     fun `accepts no explicit port`() {
-        val url = Uri.parse("https://auth.bank.com/path")
+        val url = Uri.parse("https://auth.example.com/path")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isSuccess)
     }
@@ -88,7 +88,7 @@ class SEAAuthorizeURLValidatorTest {
     @Test
     fun `rejects url exceeding 2048 bytes`() {
         val longPath = "a".repeat(2050)
-        val url = Uri.parse("https://auth.bank.com/$longPath")
+        val url = Uri.parse("https://auth.example.com/$longPath")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isFailure)
         assertEquals(InvalidUrlReason.LENGTH, (result.exceptionOrNull() as? InvalidUrlException)?.reason)
@@ -106,18 +106,18 @@ class SEAAuthorizeURLValidatorTest {
 
     @Test
     fun `rejects host with trailing dot`() {
-        // auth.bank.com. should not match auth.bank.com
-        val url = Uri.parse("https://auth.bank.com./path")
+        // auth.example.com. should not match auth.example.com
+        val url = Uri.parse("https://auth.example.com./path")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
-        // Trailing dot is stripped by normalizeHost, so auth.bank.com. → auth.bank.com
+        // Trailing dot is stripped by normalizeHost, so auth.example.com. → auth.example.com
         // which IS in the allowlist — this is correct behavior per contract §5.
         assertTrue(result.isSuccess)
     }
 
     @Test
     fun `rejects subdomain not in allowlist`() {
-        // evil-auth.bank.com must NOT match auth.bank.com
-        val url = Uri.parse("https://evil-auth.bank.com/path")
+        // evil-auth.example.com must NOT match auth.example.com
+        val url = Uri.parse("https://evil-auth.example.com/path")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isFailure)
         assertEquals(InvalidUrlReason.HOST, (result.exceptionOrNull() as? InvalidUrlException)?.reason)
@@ -125,8 +125,8 @@ class SEAAuthorizeURLValidatorTest {
 
     @Test
     fun `rejects host with extra suffix`() {
-        // auth.bank.com.evil.io must NOT match auth.bank.com
-        val url = Uri.parse("https://auth.bank.com.evil.io/path")
+        // auth.example.com.evil.io must NOT match auth.example.com
+        val url = Uri.parse("https://auth.example.com.evil.io/path")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isFailure)
         assertEquals(InvalidUrlReason.HOST, (result.exceptionOrNull() as? InvalidUrlException)?.reason)
@@ -134,7 +134,7 @@ class SEAAuthorizeURLValidatorTest {
 
     @Test
     fun `case insensitive host match`() {
-        val url = Uri.parse("https://AUTH.BANK.COM/path")
+        val url = Uri.parse("https://AUTH.EXAMPLE.COM/path")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isSuccess)
     }
@@ -148,7 +148,7 @@ class SEAAuthorizeURLValidatorTest {
 
     @Test
     fun `narrowing allowlist excludes non-narrowed hosts`() {
-        val url = Uri.parse("https://auth.bank.com/path")
+        val url = Uri.parse("https://auth.example.com/path")
         val result = SEAAuthorizeURLValidator.validate(url, devEnv, listOf("localhost"))
         assertTrue(result.isFailure)
     }
@@ -162,7 +162,7 @@ class SEAAuthorizeURLValidatorTest {
 
     @Test
     fun `disjoint narrow list yields empty allowlist`() {
-        val url = Uri.parse("https://auth.bank.com/path")
+        val url = Uri.parse("https://auth.example.com/path")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, listOf("other.com"))
         assertTrue(result.isFailure)
     }
@@ -181,7 +181,7 @@ class SEAAuthorizeURLValidatorTest {
 
     @Test
     fun `lookalike auth bank com with extra path segment`() {
-        val url = Uri.parse("https://auth.bank.com.evil.io/steal")
+        val url = Uri.parse("https://auth.example.com.evil.io/steal")
         val result = SEAAuthorizeURLValidator.validate(url, prodEnv, emptyList())
         assertTrue(result.isFailure)
     }
@@ -190,7 +190,7 @@ class SEAAuthorizeURLValidatorTest {
     fun `punycode host in allowlist`() {
         val env = SEAEnvironment(
             authDomains = setOf("xn--mnchen-3ya.de"),
-            callbackScheme = "bankerise-auth"
+            callbackScheme = "seacb"
         )
         val url = Uri.parse("https://xn--mnchen-3ya.de/path")
         val result = SEAAuthorizeURLValidator.validate(url, env, emptyList())

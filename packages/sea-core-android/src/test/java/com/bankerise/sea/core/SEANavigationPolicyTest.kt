@@ -8,8 +8,8 @@ import org.junit.Test
 class SEANavigationPolicyTest {
 
     private val env = SEAEnvironment(
-        authDomains = setOf("auth.bank.com", "localhost"),
-        callbackScheme = "bankerise-auth"
+        authDomains = setOf("auth.example.com", "localhost"),
+        callbackScheme = "seacb"
     )
 
     // ---- Callback-scheme capture (§6.3) ----
@@ -17,7 +17,7 @@ class SEANavigationPolicyTest {
     @Test
     fun `callback scheme capture preempts everything`() {
         val request = SEANavigationRequest(
-            url = Uri.parse("bankerise-auth://callback?code=abc123&state=xyz"),
+            url = Uri.parse("seacb://callback?code=abc123&state=xyz"),
             isMainFrame = true,
             currentPageHost = null
         )
@@ -31,7 +31,7 @@ class SEANavigationPolicyTest {
     @Test
     fun `callback scheme capture is case insensitive`() {
         val request = SEANavigationRequest(
-            url = Uri.parse("BANKERISE-AUTH://callback?code=test"),
+            url = Uri.parse("SEACB://callback?code=test"),
             isMainFrame = true,
             currentPageHost = null
         )
@@ -42,7 +42,7 @@ class SEANavigationPolicyTest {
     @Test
     fun `callback scheme captures error shaped params`() {
         val request = SEANavigationRequest(
-            url = Uri.parse("bankerise-auth://callback?error=access_denied&error_description=User+denied"),
+            url = Uri.parse("seacb://callback?error=access_denied&error_description=User+denied"),
             isMainFrame = true,
             currentPageHost = null
         )
@@ -71,7 +71,7 @@ class SEANavigationPolicyTest {
         val request = SEANavigationRequest(
             url = Uri.parse("about:blank"),
             isMainFrame = true,
-            currentPageHost = "auth.bank.com"
+            currentPageHost = "auth.example.com"
         )
         val decision = SEANavigationPolicy.decide(request, env, emptyList())
         assertTrue(decision is SEANavigationDecision.Block)
@@ -82,9 +82,9 @@ class SEANavigationPolicyTest {
     @Test
     fun `https main frame on allowlisted host allowed`() {
         val request = SEANavigationRequest(
-            url = Uri.parse("https://auth.bank.com/realms/test/login"),
+            url = Uri.parse("https://auth.example.com/realms/test/login"),
             isMainFrame = true,
-            currentPageHost = "auth.bank.com"
+            currentPageHost = "auth.example.com"
         )
         val decision = SEANavigationPolicy.decide(request, env, emptyList())
         assertEquals(SEANavigationDecision.Allow, decision)
@@ -93,9 +93,9 @@ class SEANavigationPolicyTest {
     @Test
     fun `https subresource same origin allowed`() {
         val request = SEANavigationRequest(
-            url = Uri.parse("https://auth.bank.com/resources/style.css"),
+            url = Uri.parse("https://auth.example.com/resources/style.css"),
             isMainFrame = false,
-            currentPageHost = "auth.bank.com"
+            currentPageHost = "auth.example.com"
         )
         val decision = SEANavigationPolicy.decide(request, env, emptyList())
         assertEquals(SEANavigationDecision.Allow, decision)
@@ -106,7 +106,7 @@ class SEANavigationPolicyTest {
         val request = SEANavigationRequest(
             url = Uri.parse("https://localhost/resources/style.css"),
             isMainFrame = false,
-            currentPageHost = "auth.bank.com"
+            currentPageHost = "auth.example.com"
         )
         val decision = SEANavigationPolicy.decide(request, env, emptyList())
         assertTrue(decision is SEANavigationDecision.Block)
@@ -118,7 +118,7 @@ class SEANavigationPolicyTest {
     @Test
     fun `http blocked`() {
         val request = SEANavigationRequest(
-            url = Uri.parse("http://auth.bank.com/path"),
+            url = Uri.parse("http://auth.example.com/path"),
             isMainFrame = true,
             currentPageHost = null
         )
@@ -215,7 +215,7 @@ class SEANavigationPolicyTest {
     @Test
     fun `narrowed allowlist is respected`() {
         val request = SEANavigationRequest(
-            url = Uri.parse("https://auth.bank.com/path"),
+            url = Uri.parse("https://auth.example.com/path"),
             isMainFrame = true,
             currentPageHost = null
         )

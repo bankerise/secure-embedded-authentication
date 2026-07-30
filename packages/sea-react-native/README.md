@@ -19,7 +19,7 @@ import { SecureAuthenticationView } from 'sea-react-native';
 <SecureAuthenticationView
   authorizeUrl={authorizeUrl}
   presentation="sheet"
-  allowedDomains={['auth.bank.local']}
+  allowedDomains={['auth.example.com']}
   timeoutMs={120000}
   onCaptured={(params) => {/* raw callback query params */}}
   onCancelled={() => {}}

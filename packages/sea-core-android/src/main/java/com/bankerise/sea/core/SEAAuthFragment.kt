@@ -45,13 +45,16 @@ class SEAAuthFragment : androidx.fragment.app.Fragment() {
         val args = requireArguments()
         val config = SEAAuthActivity.configFrom(
             android.net.Uri.parse(args.getString(SEAAuthActivity.EXTRA_AUTHORIZED_URL, "")),
-            args.getString(SEAAuthActivity.EXTRA_CALLBACK_SCHEME, "bankerise-auth"),
+            args.getString(SEAAuthActivity.EXTRA_CALLBACK_SCHEME, ""),
             args.getStringArrayList(SEAAuthActivity.EXTRA_ALLOWED_DOMAINS) ?: emptyList(),
             args.getString(SEAAuthActivity.EXTRA_PRESENTATION, "SHEET"),
             args.getLong(SEAAuthActivity.EXTRA_TIMEOUT_MS, 120_000L),
             args.getString(SEAAuthActivity.EXTRA_CAPTURE_POLICY, "WARN")
         )
-        val env = SEAEnvironment.current
+        val env = SEAEnvironment(
+            authDomains = config.allowedDomains.mapTo(HashSet()) { SEAEnvironment.normalizeHost(it) },
+            callbackScheme = config.callbackScheme
+        )
         val userCallbacks = SEASession.takePendingCallbacks()
 
         val wrappedCallbacks = SEASession.Callbacks(

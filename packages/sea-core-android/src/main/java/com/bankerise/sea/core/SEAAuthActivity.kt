@@ -58,7 +58,7 @@ class SEAAuthActivity : AppCompatActivity() {
          */
         fun configFromIntent(intent: Intent): SEAConfig {
             val url = intent.getStringExtra(EXTRA_AUTHORIZED_URL) ?: ""
-            val scheme = intent.getStringExtra(EXTRA_CALLBACK_SCHEME) ?: "bankerise-auth"
+            val scheme = intent.getStringExtra(EXTRA_CALLBACK_SCHEME) ?: ""
             val domains = intent.getStringArrayListExtra(EXTRA_ALLOWED_DOMAINS) ?: emptyList()
             val presentation = try {
                 SEAPresentation.valueOf(intent.getStringExtra(EXTRA_PRESENTATION) ?: "SHEET")
@@ -112,7 +112,10 @@ class SEAAuthActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         val config = configFromIntent(intent)
-        val env = SEAEnvironment.current
+        val env = SEAEnvironment(
+            authDomains = config.allowedDomains.mapTo(HashSet()) { SEAEnvironment.normalizeHost(it) },
+            callbackScheme = config.callbackScheme
+        )
 
         // Check if we should use fallback path (§10.4)
         val useFallback = intent.getBooleanExtra(EXTRA_USE_FALLBACK, false)

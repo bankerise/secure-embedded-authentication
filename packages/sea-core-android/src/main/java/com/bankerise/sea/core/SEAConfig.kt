@@ -33,7 +33,7 @@ data class SEAConfig(
     /** Gateway-issued authorize URL (§6.1). Validated before anything loads. */
     val authorizeUrl: Uri,
 
-    /** Custom scheme the callback redirect uses, e.g. "bankerise-auth". */
+    /** Custom scheme the callback redirect uses, e.g. "myapp-auth". */
     val callbackScheme: String,
 
     /** Host-supplied allowlist. Narrowing only (§7.1) — intersected with the
