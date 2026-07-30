@@ -10,7 +10,6 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
 import com.facebook.react.uimanager.UIManagerHelper
-import org.json.JSONObject
 
 /**
  * The native Android view for the React Native Fabric component.
@@ -99,12 +98,7 @@ class SeaReactNativeView @JvmOverloads constructor(
                 callbacks = SEABridgePresenter.BridgeCallbacks(
                     onCaptured = { paramsJson ->
                         val map = Arguments.createMap().apply {
-                            try {
-                                val json = JSONObject(paramsJson)
-                                json.keys().forEach { key ->
-                                    putString(key, json.getString(key))
-                                }
-                            } catch (_: Exception) {}
+                            putString("paramsJson", paramsJson)
                         }
                         emitTerminal("onCaptured", map)
                     },

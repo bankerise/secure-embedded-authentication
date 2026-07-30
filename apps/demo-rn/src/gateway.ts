@@ -1,5 +1,7 @@
 import { currentDeviceId } from './deviceIdentity';
 
+const clientId = 'front'
+
 /**
  * Result of the §6.1 two-hop start sequence: the final Keycloak authorize
  * URL SEACore will validate and load, plus the mode/provider the gateway
@@ -34,23 +36,61 @@ async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
   }
 }
 
-export function getCurrentUser() {
-  fetch('http://showcase-ebanking-ui.local.proxym-it.tn/secured/users/me', {
-    method: 'GET',
-    credentials: 'include', // Send browser cookies automatically
-    headers: {
-      Accept: 'application/json, text/plain, */*',
-      'Accept-Language': 'ar',
-    },
-  })
-    .then(async response => {
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-      }
-      return response.json();
-    })
-    .then(data => console.log('data ', data))
-    .catch(err => console.error('Error ', err));
+export async function getCurrentUser(
+  gatewayBaseURL: string,
+  appVersionKey: string = DEFAULT_APP_VERSION_KEY,
+) {
+  const base = gatewayBaseURL.replace(/\/+$/, '');
+  try {
+    const result = await getJSON<StartResponse>(`${base}/secured/users/me`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US',
+        'X-App-Version-Key': appVersionKey,
+        'X-Device-ID': currentDeviceId(),
+      },
+    });
+    console.log('result ', result);
+  } catch (error) {
+    console.log('Exception ', error);
+    if (error instanceof GatewayError) throw error;
+    throw new GatewayError(
+      `Invalid gateway base URL or network error: ${String(error)}`,
+    );
+  }
+}
+
+
+export async function getOauthLogin(
+  gatewayBaseURL: string,
+  appVersionKey: string = DEFAULT_APP_VERSION_KEY,
+  code: string,
+  iss: string,
+  session_state: string,
+  state: string
+) {
+  const base = gatewayBaseURL.replace(/\/+$/, '');
+  try {
+    const result = await getJSON<StartResponse>(`${base}/login/oauth2/code/${clientId}?state=${state}&session_state=${session_state}&iss=${iss}&code=${code}`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US',
+        'X-App-Version-Key': appVersionKey,
+        'X-Device-ID': currentDeviceId(),
+      },
+    });
+    console.log('getOauthLogin result ', result);
+
+    // getCurrentUser(gatewayBaseURL, appVersionKey);
+  } catch (error) {
+    console.log('Exception ', error);
+    if (error instanceof GatewayError) throw error;
+    throw new GatewayError(
+      `Invalid gateway base URL or network error: ${String(error)}`,
+    );
+  }
 }
 
 /**
