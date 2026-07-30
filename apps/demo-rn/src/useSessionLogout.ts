@@ -89,6 +89,8 @@ export function useSessionLogout(settings: Settings): SessionLogout {
           setTokenStatus(null);
         } else {
           const url = await gatewayLogout(settings.gatewayBaseURL);
+          console.log('url ', url);
+          
           setGatewayLogoutURL(url);
           setLogoutMessage(
             `Received logout URL ${nowTime()} — call it separately to complete logout.`
