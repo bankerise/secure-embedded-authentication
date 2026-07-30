@@ -4,9 +4,11 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.util.Log
 import android.graphics.Outline
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.InsetDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -44,6 +46,9 @@ internal class SEAAuthDelegate(
     private val environment: SEAEnvironment,
     private val callbacks: SEASession.Callbacks
 ) {
+    companion object {
+        private const val TAG = "SEAAuthDelegate"
+    }
     private val terminalGuard = SEATerminalGuard()
     private val handler = Handler(Looper.getMainLooper())
     private var timeoutRunnable: Runnable? = null
@@ -179,11 +184,12 @@ internal class SEAAuthDelegate(
                 dpToPx(parent, 72)
             )
 
-            // Title (weighted, takes remaining space)
+            // Title (weighted, single line with ellipsis)
             titleTextView = TextView(parent.context).apply {
                 setTextColor(config.appearance.headerText)
                 textSize = 18f
-                maxLines = 2
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
             }
             addView(titleTextView, LinearLayout.LayoutParams(
                 0,
@@ -195,20 +201,27 @@ internal class SEAAuthDelegate(
                 gravity = Gravity.CENTER_VERTICAL
             })
 
-            // Close button (fixed at end)
+            // Close button (circular gray background, fixed at end)
+            val btnSize = dpToPx(parent, 36)
+            val iconInset = dpToPx(parent, 8)
             val closeBtn = android.widget.ImageButton(parent.context).apply {
                 setImageDrawable(
-                    androidx.core.content.ContextCompat.getDrawable(
-                        context, android.R.drawable.ic_menu_close_clear_cancel
+                    InsetDrawable(
+                        androidx.core.content.ContextCompat.getDrawable(
+                            context, android.R.drawable.ic_menu_close_clear_cancel
+                        ),
+                        iconInset, iconInset, iconInset, iconInset
                     )
                 )
-                setBackgroundColor(Color.TRANSPARENT)
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(Color.parseColor("#E0E0E0"))
+                }
                 setOnClickListener { headerCloseTapped() }
                 contentDescription = SEAStrings.actionClose(context)
             }
             addView(closeBtn, LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+                btnSize, btnSize
             ).apply {
                 marginEnd = dpToPx(parent, 8)
                 gravity = Gravity.CENTER_VERTICAL
@@ -431,6 +444,7 @@ internal class SEAAuthDelegate(
         url: Uri,
         decisionHandler: (Boolean) -> Unit
     ) {
+        Log.d(TAG, "applyDecision: decision=$decision url=$url")
         when (decision) {
             is SEANavigationDecision.Capture -> {
                 decisionHandler(false)  // cancel navigation
@@ -464,16 +478,28 @@ internal class SEAAuthDelegate(
     // ---- Callback capture (§6.3) ----
 
     private fun checkCallbackBackstop(url: Uri?) {
-        if (url == null) return
-        val scheme = url.scheme?.lowercase() ?: return
+        if (url == null) {
+            Log.d(TAG, "checkCallbackBackstop: url is null")
+            return
+        }
+        val scheme = url.scheme?.lowercase() ?: run {
+            Log.d(TAG, "checkCallbackBackstop: no scheme in url=$url")
+            return
+        }
+        Log.d(TAG, "checkCallbackBackstop: url=$url scheme=$scheme expected=${environment.callbackScheme.lowercase()}")
         if (scheme != environment.callbackScheme.lowercase()) return
         val params = SEACallbackParams.extract(url)
+        Log.d(TAG, "checkCallbackBackstop: MATCH — params=$params")
         handleCapture(params.raw)
     }
 
     private fun handleCapture(raw: Map<String, String>) {
-        if (hasCaptured) return  // idempotent guard
+        if (hasCaptured) {
+            Log.d(TAG, "handleCapture: already captured, ignoring")
+            return
+        }
         hasCaptured = true
+        Log.d(TAG, "handleCapture: raw=$raw")
         fireTerminalOnce {
             val ms = if (loadStartDate > 0) {
                 System.currentTimeMillis() - loadStartDate
@@ -546,6 +572,7 @@ internal class SEAAuthDelegate(
         override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
             val url = request?.url ?: return true
             val isMainFrame = request.isForMainFrame
+            Log.d(TAG, "shouldOverrideUrlLoading: url=$url isMainFrame=$isMainFrame")
 
             val navRequest = SEANavigationRequest(
                 url = url,
@@ -560,6 +587,7 @@ internal class SEAAuthDelegate(
 
             var allowed = false
             applyDecision(decision, url) { allowed = it }
+            Log.d(TAG, "shouldOverrideUrlLoading: decision=$decision allowed=$allowed")
             return !allowed  // WebViewClient: return true = cancel, false = allow
         }
 

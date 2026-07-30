@@ -2,6 +2,7 @@ package com.bankerise.seareactnative
 
 import android.app.Activity
 import android.net.Uri
+import android.util.Log
 import com.bankerise.sea.core.SEAConfig
 import com.bankerise.sea.core.SEAAppearance
 import com.bankerise.sea.core.SEAError
@@ -76,13 +77,17 @@ object SEABridgePresenter {
 
         val seaCallbacks = SEASession.Callbacks(
             onCaptured = { params ->
-                callbacks.onCaptured(jsonString(params.raw))
+                val json = jsonString(params.raw)
+                Log.d("SEABridgePresenter", "onCaptured: raw=${params.raw} json=$json")
+                callbacks.onCaptured(json)
             },
             onCancelled = {
+                Log.d("SEABridgePresenter", "onCancelled")
                 callbacks.onCancelled()
             },
             onError = { error ->
                 val (code, message) = taxonomy(error)
+                Log.d("SEABridgePresenter", "onError: code=$code message=$message")
                 callbacks.onError(code, message)
             }
         )

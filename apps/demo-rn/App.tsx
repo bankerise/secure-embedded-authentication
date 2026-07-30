@@ -11,8 +11,15 @@ import React, { useCallback, useState } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { purgeWebData, SecureAuthenticationView } from 'sea-react-native';
 import { startAuthorization as startMockAuthorization } from './src/mockGateway';
-import { getCurrentUser, startAuthorization as startRealAuthorization } from './src/gateway';
-import { allowedDomainsArray, DEFAULT_SETTINGS, type Settings } from './src/settings';
+import {
+  getOauthLogin,
+  startAuthorization as startRealAuthorization,
+} from './src/gateway';
+import {
+  allowedDomainsArray,
+  DEFAULT_SETTINGS,
+  type Settings,
+} from './src/settings';
 import type { Result } from './src/types';
 import { useSessionLogout } from './src/useSessionLogout';
 import { ConfigScreen } from './src/screens/ConfigScreen';
@@ -23,8 +30,8 @@ import { TabBar, type TabKey } from './src/TabBar';
 function parsePorts(portsStr: string): number[] {
   return portsStr
     .split(',')
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => !isNaN(n));
+    .map(s => parseInt(s.trim(), 10))
+    .filter(n => !isNaN(n));
 }
 
 function App(): React.JSX.Element {
@@ -37,8 +44,15 @@ function App(): React.JSX.Element {
   const [result, setResult] = useState<Result>({ kind: 'idle' });
   const session = useSessionLogout(settings);
 
+  // useEffect(() => {
+  //   getCurrentUser(
+  //             settings.gatewayBaseURL,
+  //             settings.appVersionKey,
+  //           );
+  // }, [])
+
   const onChangeSettings = useCallback((patch: Partial<Settings>) => {
-    setSettings((prev) => ({ ...prev, ...patch }));
+    setSettings(prev => ({ ...prev, ...patch }));
   }, []);
 
   const startLogin = useCallback(async () => {
@@ -48,14 +62,17 @@ function App(): React.JSX.Element {
     try {
       const start = settings.useMockGateway
         ? await startMockAuthorization(settings.mockRedirectURL)
-        : await startRealAuthorization(settings.gatewayBaseURL, settings.appVersionKey);
-        
+        : await startRealAuthorization(
+            settings.gatewayBaseURL,
+            settings.appVersionKey,
+          );
+
       setAuthorizeUrl(start.authorizeUrl);
       // Remember what Logout needs from this session (authorize URL + mock flag).
       session.beginSession(start.authorizeUrl, settings.useMockGateway);
     } catch (error) {
       console.log('error ', error);
-      
+
       setLastStartError(error instanceof Error ? error.message : String(error));
     } finally {
       setIsRunning(false);
@@ -64,8 +81,7 @@ function App(): React.JSX.Element {
 
   const dismiss = useCallback(() => {
     console.log('dismiss');
-    setAuthorizeUrl(null)
-    getCurrentUser();
+    setAuthorizeUrl(null);
   }, []);
 
   const onPurgeWebData = useCallback(() => {
@@ -74,7 +90,7 @@ function App(): React.JSX.Element {
       setPurgeMessage(`Purged at ${new Date().toLocaleTimeString()}`);
     });
   }, []);
-  
+
   return (
     <SafeAreaView style={styles.root}>
       {activeTab === 'config' && (
@@ -95,7 +111,10 @@ function App(): React.JSX.Element {
         />
       )}
       {activeTab === 'result' && (
-        <ResultScreen result={result} onClear={() => setResult({ kind: 'idle' })} />
+        <ResultScreen
+          result={result}
+          onClear={() => setResult({ kind: 'idle' })}
+        />
       )}
       {activeTab === 'telemetry' && <TelemetryScreen />}
 
@@ -110,18 +129,35 @@ function App(): React.JSX.Element {
           callbackScheme={settings.callbackScheme}
           allowedPorts={parsePorts(settings.allowedPorts)}
           maxUrlLengthBytes={settings.maxUrlLengthBytes}
-          onCaptured={(params) => {
+          onCaptured={params => {
+            console.log('onCaptured ', params);
+
             setResult({ kind: 'captured', params, at: Date.now() });
             // Mock path only: exchange the code so Logout has an id_token_hint.
             session.handleCaptured(params);
             dismiss();
+
+            if (params?.code) {
+              getOauthLogin(
+                settings.gatewayBaseURL,
+                settings.appVersionKey,
+                params.code,
+                params.iss,
+                params.session_state,
+                params.state,
+              );
+            }
+            else{
+              console.log('params is null');
+              
+            }
           }}
           onCancelled={() => {
             console.log('onCancelled ');
             setResult({ kind: 'cancelled', at: Date.now() });
             dismiss();
           }}
-          onError={(error) => {
+          onError={error => {
             console.log('onError ', error);
             setResult({ kind: 'error', error, at: Date.now() });
             dismiss();
