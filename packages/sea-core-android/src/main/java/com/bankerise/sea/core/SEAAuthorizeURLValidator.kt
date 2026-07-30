@@ -26,13 +26,14 @@ object SEAAuthorizeURLValidator {
         env: SEAEnvironment,
         hostAllowlist: List<String>,
         allowedPorts: Set<Int> = setOf(-1, 443),
-        maxUrlLengthBytes: Int = 2048
+        maxUrlLengthBytes: Int = 2048,
+        allowedSchemes: Set<String> = setOf("https")
     ): Result<Uri> {
         val uriString = url.toString()
 
-        // 1. scheme == "https" (case-insensitive).
+        // 1. scheme is in the allowed set (default: {"https"}).
         val scheme = url.scheme?.lowercase() ?: return Result.failure(InvalidUrlException(InvalidUrlReason.MALFORMED))
-        if (scheme != "https") {
+        if (scheme !in allowedSchemes) {
             return Result.failure(InvalidUrlException(InvalidUrlReason.SCHEME))
         }
 

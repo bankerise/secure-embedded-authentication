@@ -59,5 +59,12 @@ data class SEAConfig(
      * Maximum byte length of the authorize URL string (§6.2).
      * URLs exceeding this are rejected. Default: 2048.
      */
-    val maxUrlLengthBytes: Int = 2048
+    val maxUrlLengthBytes: Int = 2048,
+
+    /**
+     * Allowed URI schemes for the authorize URL (§6.2).
+     * Default: setOf("https"). Add "http" for local dev with TLS termination
+     * at a reverse proxy (never in production).
+     */
+    val allowedSchemes: Set<String> = setOf("https")
 )

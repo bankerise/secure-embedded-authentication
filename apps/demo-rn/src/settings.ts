@@ -1,5 +1,4 @@
 import { ALLOWED_DOMAINS, MOCK_AUTHORIZE_URL } from './mockGateway';
-import { getSEAConfigDefaults } from './seaConfigDefaults';
 
 /**
  * Tester-facing configuration for the demo harness (mirrors
@@ -9,6 +8,10 @@ import { getSEAConfigDefaults } from './seaConfigDefaults';
  * Simplification vs. the iOS demo: kept in memory (React state) rather than
  * persisted across launches — no UserDefaults-equivalent dependency in this
  * bridge-validation harness.
+ *
+ * All sensitive values were formerly loaded from a native SEAConfigProvider
+ * module that read bankerise-sea.properties. That module was removed in the
+ * prop-driven refactor; these defaults mirror the properties file values.
  */
 export type Settings = Readonly<{
   gatewayBaseURL: string;
@@ -28,39 +31,21 @@ export type Settings = Readonly<{
 }>;
 
 function buildDefaults(): Settings {
-  try {
-    const native = getSEAConfigDefaults();
-    return {
-      gatewayBaseURL: 'https://showcase-client-gw.demo.proxym-it.net',
-      appVersionKey: '4ZvAEYVC2Xk3',
-      callbackScheme: native.callbackScheme,
-      allowedDomains: native.authDomains,
-      allowedPorts: native.allowedPorts,
-      maxUrlLengthBytes: native.maxUrlLengthBytes,
-      presentation: 'sheet',
-      timeoutMs: 120_000,
-      useMockGateway: true,
-      mockRedirectURL: MOCK_AUTHORIZE_URL,
-    };
-  } catch {
-    // NativeModule unavailable (iOS / test) — use hardcoded fallbacks.
-    return {
-      gatewayBaseURL: 'http://localhost:8080',
-      appVersionKey: '4ZvAEYVC2Xk3',
-      callbackScheme: 'bankerise-auth',
-      allowedDomains: ALLOWED_DOMAINS.join(','),
-      allowedPorts: '-1,443',
-      maxUrlLengthBytes: 2048,
-      presentation: 'sheet',
-      authMode: 'embedded',timeoutMs: 120_000,
-      useMockGateway: true,
-      mockRedirectURL: MOCK_AUTHORIZE_URL,
-    };
-  }
+  return {
+    gatewayBaseURL: 'https://showcase-client-gw.demo.proxym-it.net',
+    appVersionKey: '4ZvAEYVC2Xk3',
+    callbackScheme: 'bkrmob',
+    allowedDomains: ALLOWED_DOMAINS.join(','),
+    allowedPorts: '-1,443',
+    maxUrlLengthBytes: 2048,
+    presentation: 'sheet',
+    authMode: 'embedded',timeoutMs: 120_000,
+    useMockGateway: true,
+    mockRedirectURL: MOCK_AUTHORIZE_URL,
+  };
 }
 
 export const DEFAULT_SETTINGS: Settings = buildDefaults();
-console.log('DEFAULT_SETTINGS ', DEFAULT_SETTINGS);
 
 /** Comma list -> trimmed, non-empty array, in the shape SEAConfig expects. */
 export function allowedDomainsArray(settings: Settings): string[] {

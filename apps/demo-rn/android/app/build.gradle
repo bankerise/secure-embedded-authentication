@@ -86,7 +86,7 @@ android {
     applicationVariants.configureEach { variant ->
         tasks.named("merge${variant.name.capitalize()}Assets").configure {
             doLast {
-                def propsFile = file("../../bankerise-sea.properties")
+                def propsFile = file("../bankerise-sea.properties")
                 def assetsDir = outputDir.get().asFile
                 if (propsFile.exists()) {
                     ant.copy(file: propsFile, todir: assetsDir)

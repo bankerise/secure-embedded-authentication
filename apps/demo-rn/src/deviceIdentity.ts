@@ -12,7 +12,7 @@ let cached: string | undefined;
 
 export function currentDeviceId(): string {
   if (!cached) {
-    cached = `rn1-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    cached = `rn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
   }
   return cached;
 }
