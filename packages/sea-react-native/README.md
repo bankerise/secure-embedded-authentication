@@ -19,13 +19,17 @@ import { SecureAuthenticationView } from 'sea-react-native';
 <SecureAuthenticationView
   authorizeUrl={authorizeUrl}
   presentation="sheet"
-  allowedDomains={['auth.example.com']}
-  timeoutMs={120000}
   onCaptured={(params) => {/* raw callback query params */}}
   onCancelled={() => {}}
   onError={(error) => {/* {code, message?} — SEAError taxonomy, spec §7.2 */}}
 />
 ```
+
+Only per-session/UI values are props. The security knobs (allowed domains,
+callback scheme, allowed ports, max URL length, timeout) are **not** exposed
+on the bridge — they are owned by the native platform config: the host app's
+`SEASecurityConfig.plist` on iOS (read by `SEAEnvironment`) and its
+`bankerise-sea.properties` on Android (read by `SEAPropertiesLoader`).
 
 ## Telemetry, purge, clipboard (debug-harness API)
 

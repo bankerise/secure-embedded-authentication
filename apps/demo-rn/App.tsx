@@ -19,24 +19,13 @@ import {
   getOauthLogin,
   startAuthorization as startRealAuthorization,
 } from './src/gateway';
-import {
-  allowedDomainsArray,
-  DEFAULT_SETTINGS,
-  type Settings,
-} from './src/settings';
+import { DEFAULT_SETTINGS, type Settings } from './src/settings';
 import type { Result } from './src/types';
 import { useSessionLogout } from './src/useSessionLogout';
 import { ConfigScreen } from './src/screens/ConfigScreen';
 import { ResultScreen } from './src/screens/ResultScreen';
 import { TelemetryScreen, type TelemetryEntry } from './src/screens/TelemetryScreen';
 import { TabBar, type TabKey } from './src/TabBar';
-
-function parsePorts(portsStr: string): number[] {
-  return portsStr
-    .split(',')
-    .map(s => parseInt(s.trim(), 10))
-    .filter(n => !isNaN(n));
-}
 
 function App(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<TabKey>('config');
