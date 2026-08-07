@@ -7,6 +7,7 @@ import com.bankerise.sea.core.SEAConfig
 import com.bankerise.sea.core.SEAAppearance
 import com.bankerise.sea.core.SEAError
 import com.bankerise.sea.core.SEAPresentation
+import com.bankerise.sea.core.SEAPropertiesLoader
 import com.bankerise.sea.core.SEASession
 import org.json.JSONObject
 
@@ -22,20 +23,21 @@ import org.json.JSONObject
 object SEABridgePresenter {
 
     /**
-     * Marshals all primitive prop values into [SEAConfig] and
+     * Marshals the per-session/UI prop values into [SEAConfig] and
      * [SEAAppearance], calls [SEASession.start], and returns `true` if
      * the auth surface was launched. On validation failure,
      * [callbacks.onError] fires before this returns `false`.
+     *
+     * Security knobs (callback scheme, allowed domains, allowed ports,
+     * max URL length, timeout) are NOT props — they are owned by the
+     * platform config: `bankerise-sea.properties` loaded via
+     * [SEAPropertiesLoader]. Only `authorizeUrl`, `presentation` and
+     * `appearance` cross the bridge.
      */
     fun start(
         activity: Activity,
         authorizeUrl: String,
         presentation: String,
-        allowedDomains: List<String>,
-        timeoutMs: Int,
-        callbackScheme: String,
-        allowedPorts: Set<Int>,
-        maxUrlLengthBytes: Int,
         headerBackground: Int?,
         headerText: Int?,
         accent: Int?,
@@ -59,19 +61,17 @@ object SEABridgePresenter {
         if (cornerRadius != null && cornerRadius > 0f) appearance = appearance.copy(cornerRadius = cornerRadius)
         if (title.isNotEmpty()) appearance = appearance.copy(title = title)
 
-        val config = SEAConfig(
+        // Source of truth for all security knobs (§4.5, §7.1/§7.3): the
+        // host app's bankerise-sea.properties. Only the per-session/UI
+        // values are overridden here.
+        val config = SEAPropertiesLoader.loadConfig(activity).copy(
             authorizeUrl = url,
-            callbackScheme = callbackScheme,
-            allowedDomains = allowedDomains,
             presentation = if (presentation == "fullscreen") {
                 SEAPresentation.FULLSCREEN
             } else {
                 SEAPresentation.SHEET
             },
-            appearance = appearance,
-            timeoutMs = if (timeoutMs > 0) timeoutMs.toLong() else 120_000L,
-            allowedPorts = allowedPorts.ifEmpty { setOf(-1, 443) },
-            maxUrlLengthBytes = if (maxUrlLengthBytes > 0) maxUrlLengthBytes else 2048
+            appearance = appearance
         )
 
         val seaCallbacks = SEASession.Callbacks(

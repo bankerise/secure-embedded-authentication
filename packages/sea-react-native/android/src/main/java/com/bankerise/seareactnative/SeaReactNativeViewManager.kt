@@ -1,6 +1,5 @@
 package com.bankerise.seareactnative
 
-import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
@@ -42,7 +41,7 @@ class SeaReactNativeViewManager : SimpleViewManager<SeaReactNativeView>() {
      */
     override fun onAfterUpdateTransaction(view: SeaReactNativeView) {
         super.onAfterUpdateTransaction(view)
-        Log.d(TAG, "onAfterUpdateTransaction authorizeUrl=${view.authorizeUrl} presentation=${view.presentation} allowedDomains=${view.allowedDomains} timeoutMs=${view.timeoutMs} callbackScheme=${view.callbackScheme} allowedPorts=${view.allowedPorts} maxUrlLengthBytes=${view.maxUrlLengthBytes}")
+        Log.d(TAG, "onAfterUpdateTransaction authorizeUrl=${view.authorizeUrl} presentation=${view.presentation}")
         view.startIfNeeded()
     }
 
@@ -67,37 +66,6 @@ class SeaReactNativeViewManager : SimpleViewManager<SeaReactNativeView>() {
     @ReactProp(name = "presentation")
     fun setPresentation(view: SeaReactNativeView, presentation: String?) {
         view.presentation = presentation ?: "sheet"
-    }
-
-    @ReactProp(name = "timeoutMs", defaultInt = 0)
-    fun setTimeoutMs(view: SeaReactNativeView, timeoutMs: Int) {
-        view.timeoutMs = timeoutMs
-    }
-
-    @ReactProp(name = "allowedDomains")
-    fun setAllowedDomains(view: SeaReactNativeView, domains: ReadableArray?) {
-        Log.d(TAG, "setAllowedDomains: value=$domains")
-        view.allowedDomains = domains?.let { array ->
-            (0 until array.size()).mapNotNull { array.getString(it) }
-        } ?: emptyList()
-    }
-
-    @ReactProp(name = "callbackScheme")
-    fun setCallbackScheme(view: SeaReactNativeView, scheme: String?) {
-        Log.d(TAG, "setCallbackScheme: value=$scheme")
-        view.callbackScheme = scheme ?: ""
-    }
-
-    @ReactProp(name = "allowedPorts")
-    fun setAllowedPorts(view: SeaReactNativeView, ports: ReadableArray?) {
-        view.allowedPorts = ports?.let { array ->
-            (0 until array.size()).map { array.getInt(it) }.toSet()
-        } ?: emptySet()
-    }
-
-    @ReactProp(name = "maxUrlLengthBytes", defaultInt = 2048)
-    fun setMaxUrlLengthBytes(view: SeaReactNativeView, max: Int) {
-        view.maxUrlLengthBytes = max
     }
 
     @ReactProp(name = "appearance")

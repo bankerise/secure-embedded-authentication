@@ -1,4 +1,4 @@
-import { ALLOWED_DOMAINS, MOCK_AUTHORIZE_URL } from './mockGateway';
+import { MOCK_AUTHORIZE_URL } from './mockGateway';
 
 /**
  * Tester-facing configuration for the demo harness (mirrors
@@ -9,19 +9,16 @@ import { ALLOWED_DOMAINS, MOCK_AUTHORIZE_URL } from './mockGateway';
  * persisted across launches — no UserDefaults-equivalent dependency in this
  * bridge-validation harness.
  *
- * All sensitive values were formerly loaded from a native SEAConfigProvider
- * module that read bankerise-sea.properties. That module was removed in the
- * prop-driven refactor; these defaults mirror the properties file values.
+ * Security knobs (callback scheme, allowed domains, allowed ports, max URL
+ * length, timeout) are deliberately NOT here: they are enforced by the
+ * native platform config — `bankerise-sea.properties` on Android and
+ * `SEASecurityConfig.plist` on iOS — and are no longer props on
+ * `SecureAuthenticationView`.
  */
 export type Settings = Readonly<{
   gatewayBaseURL: string;
   appVersionKey: string;
-  callbackScheme: string;
-  allowedDomains: string;
-  allowedPorts: string;
-  maxUrlLengthBytes: number;
   presentation: 'sheet' | 'fullscreen';
-  timeoutMs: number;
   useMockGateway: boolean;
   mockRedirectURL: string;
 }>;
@@ -30,24 +27,10 @@ function buildDefaults(): Settings {
   return {
     gatewayBaseURL: 'http://localhost:8080',
     appVersionKey: '4ZvAEYVC2Xk3',
-    callbackScheme: 'bkrmob',
-    allowedDomains: ALLOWED_DOMAINS.join(','),
-    allowedPorts: '-1,443',
-    maxUrlLengthBytes: 2048,
     presentation: 'sheet',
-    timeoutMs: 120_000,
     useMockGateway: true,
     mockRedirectURL: MOCK_AUTHORIZE_URL,
   };
 }
 
 export const DEFAULT_SETTINGS: Settings = buildDefaults();
-
-
-/** Comma list -> trimmed, non-empty array, in the shape SEAConfig expects. */
-export function allowedDomainsArray(settings: Settings): string[] {
-  return settings.allowedDomains
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-}

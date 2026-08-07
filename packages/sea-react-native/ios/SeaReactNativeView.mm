@@ -76,11 +76,6 @@ using namespace facebook::react;
   NSString *presentation =
       viewProps.presentation == SeaReactNativeViewPresentation::Fullscreen ? @"fullscreen" : @"sheet";
 
-  NSMutableArray<NSString *> *allowedDomains = [NSMutableArray new];
-  for (const auto &domain : viewProps.allowedDomains) {
-    [allowedDomains addObject:RCTNSStringFromString(domain)];
-  }
-
   const auto &appearance = viewProps.appearance;
   UIColor *headerBackground = RCTUIColorFromSharedColor(appearance.headerBackground);
   UIColor *headerText = RCTUIColorFromSharedColor(appearance.headerText);
@@ -106,15 +101,13 @@ using namespace facebook::react;
   _presentedViewController = [SEABridgePresenter startFromAnchor:_view
                                                      authorizeUrl:authorizeUrl
                                                      presentation:presentation
-                                                   allowedDomains:allowedDomains
-                                                        timeoutMs:viewProps.timeoutMs
                                                  headerBackground:headerBackground
                                                        headerText:headerText
-                                                           accent:accent
-                                                    closeIconTint:closeIconTint
-                                                     cornerRadius:cornerRadius
-                                                            title:title
-                                                        callbacks:callbacks];
+                                                          accent:accent
+                                                   closeIconTint:closeIconTint
+                                                    cornerRadius:cornerRadius
+                                                           title:title
+                                                       callbacks:callbacks];
 }
 
 - (void)emitCaptured:(NSString *)paramsJson

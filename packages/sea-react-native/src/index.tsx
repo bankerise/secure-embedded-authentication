@@ -36,11 +36,6 @@ export type SecureAuthenticationViewProps = Readonly<{
   authorizeUrl: string;
   presentation?: 'sheet' | 'fullscreen';
   appearance?: SEAAppearance;
-  allowedDomains?: ReadonlyArray<string>;
-  timeoutMs?: number;
-  callbackScheme?: string;
-  allowedPorts?: ReadonlyArray<number>;
-  maxUrlLengthBytes?: number;
   onCaptured?: (params: Readonly<Record<string, string>>) => void;
   onCancelled?: () => void;
   onError?: (error: SEAError) => void;
@@ -52,6 +47,12 @@ export type SecureAuthenticationViewProps = Readonly<{
  * `sea-core-ios`; a terminal `onCaptured`/`onCancelled`/`onError` fires
  * exactly once, after which the host is expected to unmount this
  * component, which dismisses the presented surface (§7.2).
+ *
+ * Only per-session/UI values are props. Security knobs (allowed domains,
+ * callback scheme, allowed ports, max URL length, timeout) are NOT — they
+ * are owned by the native platform config: `SEASecurityConfig.plist` on iOS
+ * (loaded by `SEAEnvironment`) and `bankerise-sea.properties` on Android
+ * (loaded by `SEAPropertiesLoader`).
  */
 export function SecureAuthenticationView(
   props: SecureAuthenticationViewProps

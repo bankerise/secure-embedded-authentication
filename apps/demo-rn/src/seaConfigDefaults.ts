@@ -1,15 +1,14 @@
 /**
- * SEAConfigDefaults were previously loaded from a `SEAConfigProvider`
- * NativeModule. As of the _prop-driven_ refactor (spec §4.5, §7.2) every
- * sensitive value is passed as a runtime prop from the settings UI —
- * nothing is compiled in.
+ * Legacy re-export point retained so imports in settings.ts don't break.
  *
- * This file is kept as a re-export point so imports in settings.ts don't
- * break, but the function always returns fallback values (caller must handle
- * via the catch block in settings.ts's buildDefaults).
+ * Security values are no longer loaded from JS or a native module at all:
+ * `SecureAuthenticationView` does not accept them as props. They are owned
+ * by the native platform config — `SEASecurityConfig.plist` on iOS (read by
+ * `SEAEnvironment`) and `bankerise-sea.properties` on Android (read by
+ * `SEAPropertiesLoader`) — so this function always throws.
  */
 export function getSEAConfigDefaults(): never {
   throw new Error(
-    'SEAConfigProvider native module was removed. All values must be supplied via SEAConfig props at session time.'
+    'SEAConfigProvider native module was removed. Security values are owned by the platform config (SEASecurityConfig.plist / bankerise-sea.properties).'
   );
 }

@@ -16,12 +16,6 @@ export const MOCK_AUTHORIZE_URL =
   '&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM' +
   '&code_challenge_method=S256';
 
-export const ALLOWED_DOMAINS = [
-  'auth.bank.local',
-  'localhost',
-  'platform-keycloak.pres.proxym-it.net',
-];
-
 /**
  * PKCE `code_verifier` that pairs with MOCK_AUTHORIZE_URL's `code_challenge`
  * (`E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM`, S256) — the RFC 7636 worked

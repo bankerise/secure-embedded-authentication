@@ -49,11 +49,6 @@ class SeaReactNativeView @JvmOverloads constructor(
     var closeIconTint: Int? = null
     var cornerRadius: Float? = null
     var title: String = ""
-    var allowedDomains: List<String> = emptyList()
-    var timeoutMs: Int = 0
-    var callbackScheme: String = ""
-    var allowedPorts: Set<Int> = emptySet()
-    var maxUrlLengthBytes: Int = 2048
 
     // ── Terminal-event callbacks (set by ViewManager) ──
 
@@ -93,11 +88,6 @@ class SeaReactNativeView @JvmOverloads constructor(
                 activity = activity,
                 authorizeUrl = authorizeUrl,
                 presentation = presentation,
-                allowedDomains = allowedDomains,
-                timeoutMs = timeoutMs,
-                callbackScheme = callbackScheme,
-                allowedPorts = allowedPorts,
-                maxUrlLengthBytes = maxUrlLengthBytes,
                 headerBackground = headerBackground,
                 headerText = headerText,
                 accent = accent,
