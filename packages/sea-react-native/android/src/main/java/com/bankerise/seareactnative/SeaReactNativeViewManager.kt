@@ -4,11 +4,13 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.bridge.WritableNativeMap
+import com.facebook.react.uimanager.ReactStylesDiffMap
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.annotations.ReactProp
 import com.facebook.react.uimanager.events.Event
+import android.util.Log
 
 /**
  * Fabric-compatible ViewManager for `SeaReactNativeView`.
@@ -21,6 +23,8 @@ import com.facebook.react.uimanager.events.Event
  * Registered in [SeaReactNativePackage].
  */
 class SeaReactNativeViewManager : SimpleViewManager<SeaReactNativeView>() {
+
+    private val TAG = "SeaReactNativeViewManager"
 
     override fun getName(): String = "SeaReactNativeView"
 
@@ -38,7 +42,13 @@ class SeaReactNativeViewManager : SimpleViewManager<SeaReactNativeView>() {
      */
     override fun onAfterUpdateTransaction(view: SeaReactNativeView) {
         super.onAfterUpdateTransaction(view)
+        Log.d(TAG, "onAfterUpdateTransaction authorizeUrl=${view.authorizeUrl} presentation=${view.presentation} allowedDomains=${view.allowedDomains} timeoutMs=${view.timeoutMs} callbackScheme=${view.callbackScheme} allowedPorts=${view.allowedPorts} maxUrlLengthBytes=${view.maxUrlLengthBytes}")
         view.startIfNeeded()
+    }
+
+    override fun updateProperties(viewToUpdate: SeaReactNativeView, props: ReactStylesDiffMap) {
+        Log.d(TAG, "updateProperties keys=${props.toMap().keys}")
+        super.updateProperties(viewToUpdate, props)
     }
 
     /** §7.2: if view is torn down before a terminal callback, reset state. */
@@ -66,6 +76,7 @@ class SeaReactNativeViewManager : SimpleViewManager<SeaReactNativeView>() {
 
     @ReactProp(name = "allowedDomains")
     fun setAllowedDomains(view: SeaReactNativeView, domains: ReadableArray?) {
+        Log.d(TAG, "setAllowedDomains: value=$domains")
         view.allowedDomains = domains?.let { array ->
             (0 until array.size()).mapNotNull { array.getString(it) }
         } ?: emptyList()
@@ -73,6 +84,7 @@ class SeaReactNativeViewManager : SimpleViewManager<SeaReactNativeView>() {
 
     @ReactProp(name = "callbackScheme")
     fun setCallbackScheme(view: SeaReactNativeView, scheme: String?) {
+        Log.d(TAG, "setCallbackScheme: value=$scheme")
         view.callbackScheme = scheme ?: ""
     }
 

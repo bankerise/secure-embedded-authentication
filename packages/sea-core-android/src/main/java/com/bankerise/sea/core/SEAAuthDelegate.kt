@@ -555,7 +555,12 @@ internal class SEAAuthDelegate(
         dismissSelf()
     }
 
-    private fun headerCloseTapped() {
+    /**
+     * User dismissed the surface via any path (toolbar close button, backdrop
+     * tap, or system back). Fires the appropriate terminal callback exactly
+     * once so the host always observes the dismissal and can reset its state.
+     */
+    fun onUserDismiss() {
         if (currentDisplayedError != null) {
             fireTerminalOnce {
                 callbacks.onError(currentDisplayedError!!)
@@ -570,6 +575,8 @@ internal class SEAAuthDelegate(
             }
         }
     }
+
+    private fun headerCloseTapped() = onUserDismiss()
 
     private fun dismissSelf() {
         cancelTimeout()

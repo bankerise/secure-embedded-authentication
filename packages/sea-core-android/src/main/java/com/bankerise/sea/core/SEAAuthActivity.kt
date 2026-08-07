@@ -171,7 +171,7 @@ class SEAAuthActivity : AppCompatActivity() {
 
         if (config.presentation == SEAPresentation.SHEET) {
             applySheetWindowStyle()
-            val sheetView = delegate.createSheetView(root) { finishWithAnimation() }
+            val sheetView = delegate.createSheetView(root) { delegate.onUserDismiss() }
             root.addView(sheetView, FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -223,7 +223,7 @@ class SEAAuthActivity : AppCompatActivity() {
     @Deprecated("Use OnBackPressedCallback instead")
     override fun onBackPressed() {
         if (!delegate.handleBackPress()) {
-            super.onBackPressed()
+            delegate.onUserDismiss()
         }
     }
 

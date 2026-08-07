@@ -65,19 +65,28 @@ class SeaReactNativeView @JvmOverloads constructor(
 
     private var hasStarted = false
     private var hasFinished = false
+    private var startedUrl: String = ""
 
     /**
      * Called from [SeaReactNativeViewManager.onAfterUpdateTransaction] and
-     * [onAttachedToWindow]. Only actually starts once both a non-empty
-     * `authorizeUrl` and an Activity are available — mirrors the iOS
-     * `startIfNeeded` dual-hook pattern.
+     * [onAttachedToWindow]. Starts a session when a non-empty `authorizeUrl`
+     * that differs from the last-started URL is available — mirrors the iOS
+     * `startIfNeeded` dual-hook pattern. Clearing `authorizeUrl` resets the
+     * one-shot guards so a later re-login can start a fresh session even if
+     * this View instance is reused (Fabric view recycling) rather than
+     * recreated from scratch.
      */
     fun startIfNeeded() {
-        if (hasStarted || hasFinished) return
-        if (authorizeUrl.isEmpty()) return
+        if (authorizeUrl.isEmpty()) {
+            reset()
+            return
+        }
+        if (startedUrl == authorizeUrl) return
 
         val activity = reactContext?.currentActivity ?: return
         hasStarted = true
+        hasFinished = false
+        startedUrl = authorizeUrl
 
         val block = Runnable {
             SEABridgePresenter.start(
@@ -129,6 +138,7 @@ class SeaReactNativeView @JvmOverloads constructor(
     fun reset() {
         hasStarted = false
         hasFinished = false
+        startedUrl = ""
     }
 
     // ── Event dispatch (mirrors iOS emitCaptured/emitCancelled/emitError) ──
