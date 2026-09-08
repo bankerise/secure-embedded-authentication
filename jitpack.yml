@@ -1,0 +1,16 @@
+jdk:
+  - openjdk17
+
+# There's no Gradle project at the repo root — sea-core-android is a plain
+# Android library module meant to be included by a parent build (see
+# packages/sea-core-android/build.gradle.kts). apps/demo-android already
+# wires it in via settings.gradle.kts for the native demo harness, so reuse
+# that working project instead of duplicating a Gradle wrapper at the repo
+# root just for this. The `install` step must land artifacts in
+# ~/.m2/repository, which publishToMavenLocal does regardless of which
+# directory it's invoked from — see packages/sea-core-android/build.gradle.kts
+# for the maven-publish config, and infra/README.md for the full mechanism.
+install:
+  # `sh gradlew` (not `./gradlew`) because the committed wrapper script
+  # doesn't carry the executable bit on a Windows-authored checkout.
+  - cd apps/demo-android && sh gradlew :sea-core-android:publishToMavenLocal
