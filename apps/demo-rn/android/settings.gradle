@@ -4,10 +4,9 @@ extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autoli
 rootProject.name = 'demo_rn'
 include ':app'
 
-// Local native library dependencies (monorepo)
-// sea-core-android is a plain Android library (not RN), so autolinking
-// won't discover it — include it manually.
-include(':sea-core-android')
-project(':sea-core-android').projectDir = file('../../../packages/sea-core-android')
+// sea-core-android is resolved from the prebuilt AAR bundled inside
+// sea-react-native's own npm package (see
+// packages/sea-react-native/android/build.gradle.kts) — this app validates
+// the bridge the way an external consumer actually experiences it.
 
 includeBuild('../../../node_modules/@react-native/gradle-plugin')
