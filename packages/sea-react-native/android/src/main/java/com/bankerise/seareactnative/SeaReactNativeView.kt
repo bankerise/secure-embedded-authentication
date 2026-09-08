@@ -43,6 +43,7 @@ class SeaReactNativeView @JvmOverloads constructor(
 
     var authorizeUrl: String = ""
     var presentation: String = "sheet"
+    var authMode: String = "embedded"
     var headerBackground: Int? = null
     var headerText: Int? = null
     var accent: Int? = null
@@ -88,6 +89,7 @@ class SeaReactNativeView @JvmOverloads constructor(
                 activity = activity,
                 authorizeUrl = authorizeUrl,
                 presentation = presentation,
+                authMode = authMode,
                 headerBackground = headerBackground,
                 headerText = headerText,
                 accent = accent,

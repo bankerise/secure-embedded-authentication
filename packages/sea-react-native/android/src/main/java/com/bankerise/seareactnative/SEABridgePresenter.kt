@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Log
 import com.bankerise.sea.core.SEAConfig
 import com.bankerise.sea.core.SEAAppearance
+import com.bankerise.sea.core.SEAAuthMode
 import com.bankerise.sea.core.SEAError
 import com.bankerise.sea.core.SEAPresentation
 import com.bankerise.sea.core.SEAPropertiesLoader
@@ -31,13 +32,15 @@ object SEABridgePresenter {
      * Security knobs (callback scheme, allowed domains, allowed ports,
      * max URL length, timeout) are NOT props — they are owned by the
      * platform config: `bankerise-sea.properties` loaded via
-     * [SEAPropertiesLoader]. Only `authorizeUrl`, `presentation` and
-     * `appearance` cross the bridge.
+     * [SEAPropertiesLoader]. Only `authorizeUrl`, `presentation`,
+     * `authMode` and `appearance` cross the bridge. Mirrors
+     * `ios/SEABridgePresenter.swift`.
      */
     fun start(
         activity: Activity,
         authorizeUrl: String,
         presentation: String,
+        authMode: String,
         headerBackground: Int?,
         headerText: Int?,
         accent: Int?,
@@ -71,7 +74,12 @@ object SEABridgePresenter {
             } else {
                 SEAPresentation.SHEET
             },
-            appearance = appearance
+            appearance = appearance,
+            authMode = if (authMode == "nativeBrowser") {
+                SEAAuthMode.NATIVE_BROWSER
+            } else {
+                SEAAuthMode.EMBEDDED
+            }
         )
 
         val seaCallbacks = SEASession.Callbacks(

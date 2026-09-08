@@ -41,11 +41,3 @@ function buildDefaults(): Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = buildDefaults();
-
-/** Comma list -> trimmed, non-empty array, in the shape SEAConfig expects. */
-export function allowedDomainsArray(settings: Settings): string[] {
-  return settings.allowedDomains
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-}

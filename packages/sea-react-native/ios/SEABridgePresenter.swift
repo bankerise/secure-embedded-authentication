@@ -34,8 +34,6 @@ public final class SEABridgePresenter: NSObject {
         authorizeUrl: String,
         presentation: String,
         authMode: String,
-        allowedDomains: [String],
-        timeoutMs: Int,
         headerBackground: UIColor?,
         headerText: UIColor?,
         accent: UIColor?,
@@ -70,8 +68,7 @@ public final class SEABridgePresenter: NSObject {
             authorizeURL: url,
             presentation: presentation == "fullscreen" ? .fullscreen : .sheet,
             appearance: appearance,
-            timeoutMs: timeoutMs > 0 ? timeoutMs : 120_000,
-                    authMode: authMode == "nativeBrowser" ? .nativeBrowser : .embedded
+            authMode: authMode == "nativeBrowser" ? .nativeBrowser : .embedded
         )
 
         let seaCallbacks = SEASession.Callbacks(

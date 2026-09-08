@@ -81,7 +81,7 @@ class SEAAuthFragment : androidx.fragment.app.Fragment() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             ))
         } else {
-            val webViewContainer = delegate.createView(root)
+            val webViewContainer = delegate.createView(root) { dismissSelf() }
             root.addView(webViewContainer, FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT

@@ -44,6 +44,15 @@ class SEAConfigTests {
     }
 
     @Test
+    fun `default authMode is EMBEDDED`() {
+        val config = SEAConfig(
+            authorizeUrl = Uri.parse("https://auth.example.com/auth"),
+            callbackScheme = "seacb"
+        )
+        assertEquals(SEAAuthMode.EMBEDDED, config.authMode)
+    }
+
+    @Test
     fun `appearance defaults are usable`() {
         val appearance = SEAAppearance.default
         assertEquals(null, appearance.title)

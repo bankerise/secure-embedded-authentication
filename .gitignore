@@ -42,3 +42,5 @@ apps/demo-android/android/app/build/
 apps/demo-android/.idea/
 apps/demo-android/.kotlin/
 apps/demo-android/local.properties
+/graphify-out/
+/.idea/

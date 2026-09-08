@@ -8,6 +8,19 @@
         <item name="android:windowIsFloating">false</item>
         <item name="android:windowAnimationStyle">@style/SEA.AuthSheetAnimation</item>
         <item name="android:windowSoftInputMode">adjustResize</item>
+        <!--
+        Never repaint the status/nav bars: this Activity is a translucent
+        overlay on top of the host app (§18.1), not a distinct screen.
+        Without this, Theme.MaterialComponents.Light's own default status
+        bar color/appearance briefly replaces the host app's real one the
+        moment this Activity opens, then has to visually snap back on
+        finish() — that mismatch is what reads as "the status bar changes"
+        on open and an ugly transition on dismiss. Transparent here means
+        there is nothing to repaint, so the host app's own status bar just
+        keeps showing through unchanged the entire time.
+        -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
     <style name="SEA.AuthSheetAnimation" parent="">

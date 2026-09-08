@@ -104,8 +104,6 @@ using namespace facebook::react;
                                                      authorizeUrl:authorizeUrl
                                                      presentation:presentation
                                                          authMode:authMode
-                                                   allowedDomains:allowedDomains
-                                                        timeoutMs:viewProps.timeoutMs
                                                  headerBackground:headerBackground
                                                        headerText:headerText
                                                           accent:accent

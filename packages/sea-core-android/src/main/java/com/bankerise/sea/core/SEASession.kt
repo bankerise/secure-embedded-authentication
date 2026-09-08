@@ -56,10 +56,14 @@ object SEASession {
      * presents the auth surface. Returns `null` if validation failed — in that
      * case [callbacks.onError] has already been called and nothing was started.
      *
-     * Spec §10.4 pre-flight: if [SEAWebAuthnCapability.isEmbeddedCeremonySupported]
+     * Spec §10.4: `config.authMode == SEAAuthMode.NATIVE_BROWSER` is checked
+     * first and short-circuits the WebAuthn capability probe entirely — an
+     * explicit caller choice always wins over the automatic pre-flight
+     * decision. Otherwise, if [SEAWebAuthnCapability.isEmbeddedCeremonySupported]
      * returns false, the entire login attempt is routed to the fallback path
      * ([SEAFallbackAuthRunner]) instead of the normal embedded
-     * [SEAAuthActivity].
+     * [SEAAuthActivity]. Mirrors `SEASession.viewController(for:...)` in
+     * `sea-core-ios`'s `SEASession.swift`.
      */
     fun makeIntent(
         context: Context,
@@ -82,6 +86,14 @@ object SEASession {
                 ?: InvalidUrlReason.MALFORMED
             callbacks.onError(SEAError.InvalidAuthorizeUrl(reason))
             return null
+        }
+
+        // Explicit caller choice (spec §10.4) short-circuits the pre-flight
+        // probe entirely.
+        if (config.authMode == SEAAuthMode.NATIVE_BROWSER) {
+            return SEAAuthActivity.createIntent(context, config).apply {
+                putExtra(SEAAuthActivity.EXTRA_USE_FALLBACK, true)
+            }
         }
 
         // Spec §10.4 step 1: pre-flight WebAuthn capability check

@@ -97,6 +97,7 @@ function App(): React.JSX.Element {
       {activeTab === 'config' && (
         <ConfigScreen
           settings={settings}
+
           onChangeSettings={onChangeSettings}
           isRunning={isRunning}
           lastStartError={lastStartError}
@@ -126,13 +127,9 @@ function App(): React.JSX.Element {
       {authorizeUrl !== null && (
         <SecureAuthenticationView
           authorizeUrl={authorizeUrl}
+
           presentation={settings.presentation}
           authMode={settings.authMode}
-          allowedDomains={allowedDomainsArray(settings)}
-          timeoutMs={settings.timeoutMs}
-          callbackScheme={settings.callbackScheme}
-          allowedPorts={parsePorts(settings.allowedPorts)}
-          maxUrlLengthBytes={settings.maxUrlLengthBytes}
           onCaptured={params => {
             console.log('onCaptured ', params);
 

@@ -14,6 +14,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.MotionEvent
+import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
@@ -29,6 +31,9 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.google.android.material.progressindicator.CircularProgressIndicator
 
 /**
@@ -48,11 +53,36 @@ internal class SEAAuthDelegate(
 ) {
     companion object {
         private const val TAG = "SEAAuthDelegate"
+
+        /** Downward drag past this fraction of the sheet's height dismisses it. */
+        private const val DISMISS_DISTANCE_FRACTION = 0.35f
+
+        /** Or a downward fling at/past this velocity (dp/s) dismisses it,
+         *  regardless of how far it was actually dragged. */
+        private const val DISMISS_FLING_VELOCITY_DP_PER_S = 800f
+
+        private const val SHEET_DISMISS_ANIM_MS = 200L
+        private const val SHEET_SNAP_BACK_ANIM_MS = 200L
+
+        /**
+         * A WebView's very first navigation in a process can spuriously fail
+         * with ERROR_HOST_LOOKUP (net::ERR_NAME_NOT_RESOLVED) before
+         * Chromium's underlying network stack has finished initializing —
+         * unrelated to any real DNS/connectivity problem, and gone by the
+         * very next attempt. This is a delay before the one silent retry
+         * (see onReceivedError), giving that init a moment to finish rather
+         * than immediately re-racing it.
+         */
+        private const val HOST_LOOKUP_RETRY_DELAY_MS = 400L
     }
     private val terminalGuard = SEATerminalGuard()
     private val handler = Handler(Looper.getMainLooper())
     private var timeoutRunnable: Runnable? = null
     private var hasFinishedFirstLoad = false
+    private var hasRetriedAfterHostLookupFailure = false
+    private var suppressNextPageFinished = false
+    private var hostLookupRetryRunnable: Runnable? = null
+    private var suppressFlagResetRunnable: Runnable? = null
     private var currentDisplayedError: SEAError? = null
     private var currentPageHost: String? = null
     private var loadStartDate: Long = 0L
@@ -80,54 +110,172 @@ internal class SEAAuthDelegate(
     /**
      * Build the full view hierarchy. Call from Activity.setContentView or
      * Fragment.onCreateView.
+     *
+     * Fullscreen has no sheet edge to drag and no backdrop to tap outside
+     * of, so — unlike [createSheetView] — it keeps an explicit close button
+     * in its header; [onDismiss] fires when it's tapped.
      */
-    fun createView(parent: ViewGroup): View {
+    fun createView(parent: ViewGroup, onDismiss: () -> Unit): View {
         container = LinearLayout(parent.context).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
+            // §18.1: background comes from host config (mirrors iOS's
+            // `view.backgroundColor = config.appearance.headerBackground`
+            // in SEAAuthViewController), not hardcoded.
+            setBackgroundColor(config.appearance.headerBackground)
         }
 
-        toolbar = createToolbar(parent)
+        toolbar = createToolbar(parent, showsCloseButton = true, onClose = onDismiss)
         container.addView(toolbar)
 
         val overlay = createOverlay(parent)
         container.addView(overlay)
 
+        // targetSdk 35+ enforces edge-to-edge by default, under which
+        // windowSoftInputMode="adjustResize" (set in the manifest) alone no
+        // longer reliably resizes the window around the keyboard. Padding
+        // the WebView's container by the live IME inset shrinks its
+        // rendered viewport instead, so the WebView's own "scroll focused
+        // field into view" behavior can bring the field above the keyboard.
+        applyImeInsetPadding(overlay)
+
         return container
+    }
+
+    /**
+     * Applies bottom padding to [view] equal to the current IME (keyboard)
+     * inset, live-updated as the keyboard shows/hides. Falls back to the
+     * system bars' bottom inset when the keyboard is hidden, so this never
+     * removes padding the OS itself expects reserved (nav bar, etc.).
+     */
+    private fun applyImeInsetPadding(view: View) {
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
+            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            val systemBarsBottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+            v.updatePadding(bottom = maxOf(imeBottom, systemBarsBottom))
+            insets
+        }
+        ViewCompat.requestApplyInsets(view)
     }
 
     /**
      * Build the bottom-sheet view hierarchy (§18.1).
      *
      * Wraps the WebView + toolbar in a rounded-corner sheet that slides up
-     * from the bottom. The [onCloseTap] callback fires when the user taps
-     * the semi-transparent backdrop outside the sheet.
+     * from the bottom. No backdrop dimming and no close button — [onDismiss]
+     * fires when the user drags the sheet's header (toolbar/grabber)
+     * downward past the dismiss threshold, taps outside the sheet's bounds,
+     * or triggers system back ([handleBackPress] / [onUserDismiss]).
      */
-    fun createSheetView(parent: ViewGroup, onCloseTap: () -> Unit): View {
-        val backdrop = createBackdrop(parent, onCloseTap)
+    fun createSheetView(parent: ViewGroup, onDismiss: () -> Unit): View {
+        val sheetRoot = createSheetRoot(parent)
         val sheet = createSheetContainer(parent)
         container = sheet
-        if (config.appearance.showsGrabber) sheet.addView(createGrabber(parent))
-        toolbar = createToolbar(parent)
+        val grabber = if (config.appearance.showsGrabber) createGrabber(parent) else null
+        grabber?.let { sheet.addView(it) }
+        toolbar = createToolbar(parent, showsCloseButton = false, onClose = onDismiss)
         sheet.addView(toolbar)
 
         val overlay = createOverlay(parent)
         sheet.addView(overlay)
-        backdrop.addView(sheet)
-        return backdrop
+        sheetRoot.addView(sheet)
+
+        // Swallow taps that land within the sheet's own bounds so they
+        // don't bubble up to sheetRoot's tap-outside-to-dismiss listener
+        // below (defensive — the sheet's children already fill 100% of its
+        // height and consume their own touches, but this guarantees it).
+        sheet.setOnClickListener { }
+        sheetRoot.setOnClickListener { onDismiss() }
+
+        // Drag handle is restricted to the header (grabber + toolbar), never
+        // the WebView content, so it never competes with the WebView's own
+        // touch/scroll handling.
+        attachDragToDismiss(toolbar, sheet, onDismiss)
+        grabber?.let { attachDragToDismiss(it, sheet, onDismiss) }
+
+        return sheetRoot
     }
 
-    private fun createBackdrop(parent: ViewGroup, onClick: () -> Unit): FrameLayout {
+    /**
+     * Full-screen container that hosts and bottom-aligns the sheet.
+     * Transparent, non-interactive — no dimming and no tap-to-dismiss
+     * (§18.1: dismissal is drag-to-dismiss on the header, or system back).
+     */
+    private fun createSheetRoot(parent: ViewGroup): FrameLayout {
         return FrameLayout(parent.context).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            setBackgroundColor(Color.parseColor("#1A000000"))
-            setOnClickListener { onClick() }
+        }
+    }
+
+    /**
+     * Attaches a downward-drag-to-dismiss gesture to [handle] (the sheet's
+     * header — toolbar and/or grabber). Deliberately restricted to the
+     * header rather than the whole sheet so it never intercepts the
+     * WebView's own touch/scroll handling.
+     *
+     * Downward drag translates [sheet] by the drag distance, clamped so it
+     * can never be dragged upward past its resting position. On release,
+     * [onDismissed] fires — after animating the sheet fully off-screen —
+     * if the drag passed [DISMISS_DISTANCE_FRACTION] of the sheet's height
+     * or the release velocity passed [DISMISS_FLING_VELOCITY_DP_PER_S];
+     * otherwise the sheet animates back to its resting position.
+     */
+    private fun attachDragToDismiss(handle: View, sheet: View, onDismissed: () -> Unit) {
+        var velocityTracker: VelocityTracker? = null
+        var startY = 0f
+
+        handle.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    sheet.animate().cancel()
+                    startY = event.rawY
+                    velocityTracker = VelocityTracker.obtain().apply { addMovement(event) }
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    velocityTracker?.addMovement(event)
+                    val dragDistance = (event.rawY - startY).coerceAtLeast(0f)
+                    sheet.translationY = dragDistance
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    var flingVelocity = 0f
+                    velocityTracker?.let { tracker ->
+                        tracker.addMovement(event)
+                        tracker.computeCurrentVelocity(1000)
+                        flingVelocity = tracker.yVelocity
+                        tracker.recycle()
+                    }
+                    velocityTracker = null
+
+                    val density = handle.resources.displayMetrics.density
+                    val flingThresholdPx = DISMISS_FLING_VELOCITY_DP_PER_S * density
+                    val distanceThresholdPx = sheet.height * DISMISS_DISTANCE_FRACTION
+
+                    val shouldDismiss = sheet.translationY > distanceThresholdPx ||
+                        flingVelocity > flingThresholdPx
+                    if (shouldDismiss) {
+                        sheet.animate()
+                            .translationY(sheet.height.toFloat())
+                            .setDuration(SHEET_DISMISS_ANIM_MS)
+                            .withEndAction { onDismissed() }
+                            .start()
+                    } else {
+                        sheet.animate()
+                            .translationY(0f)
+                            .setDuration(SHEET_SNAP_BACK_ANIM_MS)
+                            .start()
+                    }
+                    true
+                }
+                else -> false
+            }
         }
     }
 
@@ -174,7 +322,13 @@ internal class SEAAuthDelegate(
         }
     }
 
-    private fun createToolbar(parent: ViewGroup): LinearLayout {
+    /**
+     * @param showsCloseButton fullscreen only (§18.1) — the sheet has no
+     *   close button; it dismisses via drag, tap-outside, or system back.
+     * @param onClose invoked when the close button is tapped. Unused (never
+     *   wired to anything) when [showsCloseButton] is false.
+     */
+    private fun createToolbar(parent: ViewGroup, showsCloseButton: Boolean, onClose: () -> Unit): LinearLayout {
         return LinearLayout(parent.context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -184,7 +338,9 @@ internal class SEAAuthDelegate(
                 dpToPx(parent, 72)
             )
 
-            // Title (weighted, single line with ellipsis)
+            // No title text is ever displayed here — this TextView stays
+            // only as a flexible spacer so the toolbar's layout balances
+            // correctly with or without the close button.
             titleTextView = TextView(parent.context).apply {
                 setTextColor(config.appearance.headerText)
                 textSize = 18f
@@ -197,46 +353,47 @@ internal class SEAAuthDelegate(
                 1f
             ).apply {
                 marginStart = dpToPx(parent, 16)
-                marginEnd = dpToPx(parent, 8)
+                marginEnd = dpToPx(parent, 16)
                 gravity = Gravity.CENTER_VERTICAL
             })
 
-            // Close button (circular gray background, fixed at end)
-            val btnSize = dpToPx(parent, 24)
-            val iconInset = dpToPx(parent, 6)
-            val closeBtn = android.widget.ImageButton(parent.context).apply {
-                setImageDrawable(
-                    InsetDrawable(
-                        androidx.core.content.ContextCompat.getDrawable(
-                            context, android.R.drawable.ic_menu_close_clear_cancel
-                        ),
-                        iconInset, iconInset, iconInset, iconInset
+            if (showsCloseButton) {
+                val btnSize = dpToPx(parent, 24)
+                val iconInset = dpToPx(parent, 6)
+                val closeBtn = android.widget.ImageButton(parent.context).apply {
+                    setImageDrawable(
+                        InsetDrawable(
+                            androidx.core.content.ContextCompat.getDrawable(
+                                context, android.R.drawable.ic_menu_close_clear_cancel
+                            ),
+                            iconInset, iconInset, iconInset, iconInset
+                        )
                     )
-                )
-                background = GradientDrawable().apply {
-                    shape = GradientDrawable.OVAL
-                    setColor(Color.parseColor("#E0E0E0"))
+                    background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(Color.parseColor("#E0E0E0"))
+                    }
+
+                    setPadding(0, 0, 0, 0)
+                    scaleType = ImageView.ScaleType.CENTER_INSIDE
+
+                    layoutParams = LinearLayout.LayoutParams(btnSize, btnSize).apply {
+                        marginStart = dpToPx(parent, 8)
+                        marginEnd = dpToPx(parent, 8)
+                        topMargin = dpToPx(parent, 4)
+                        bottomMargin = dpToPx(parent, 4)
+                    }
+
+                    setOnClickListener { onClose() }
+                    contentDescription = SEAStrings.actionClose(context)
                 }
-
-                setPadding(0, 0, 0, 0)
-                scaleType = ImageView.ScaleType.CENTER_INSIDE
-
-                layoutParams = LinearLayout.LayoutParams(btnSize, btnSize).apply {
-                    marginStart = dpToPx(parent, 8)
-                    marginEnd = dpToPx(parent, 8)   // Padding from the right
-                    topMargin = dpToPx(parent, 4)
-                    bottomMargin = dpToPx(parent, 4)
-                }
-
-                setOnClickListener { headerCloseTapped() }
-                contentDescription = SEAStrings.actionClose(context)
+                addView(closeBtn, LinearLayout.LayoutParams(
+                    btnSize, btnSize
+                ).apply {
+                    marginEnd = dpToPx(parent, 8)
+                    gravity = Gravity.CENTER_VERTICAL
+                })
             }
-            addView(closeBtn, LinearLayout.LayoutParams(
-                btnSize, btnSize
-            ).apply {
-                marginEnd = dpToPx(parent, 8)
-                gravity = Gravity.CENTER_VERTICAL
-            })
         }
     }
 
@@ -375,6 +532,13 @@ internal class SEAAuthDelegate(
         activity?.let { SEAScreenSecurity.stopCaptureMonitoring(it) }
         activity?.let { SEAScreenSecurity.removeCaptureOverlay(it) }
         cancelTimeout()
+        // If the sheet is dismissed mid-retry (see onReceivedError's
+        // ERROR_HOST_LOOKUP handling), these must not fire after webView is
+        // destroyed below.
+        hostLookupRetryRunnable?.let { handler.removeCallbacks(it) }
+        hostLookupRetryRunnable = null
+        suppressFlagResetRunnable?.let { handler.removeCallbacks(it) }
+        suppressFlagResetRunnable = null
         webView.destroy()
     }
 
@@ -556,9 +720,10 @@ internal class SEAAuthDelegate(
     }
 
     /**
-     * User dismissed the surface via any path (toolbar close button, backdrop
-     * tap, or system back). Fires the appropriate terminal callback exactly
-     * once so the host always observes the dismissal and can reset its state.
+     * User dismissed the surface via any path — fullscreen's toolbar close
+     * button; the sheet's drag-to-dismiss or tap-outside; or system back on
+     * either — fires the appropriate terminal callback exactly once so the
+     * host always observes the dismissal and can reset its state.
      */
     fun onUserDismiss() {
         if (currentDisplayedError != null) {
@@ -575,8 +740,6 @@ internal class SEAAuthDelegate(
             }
         }
     }
-
-    private fun headerCloseTapped() = onUserDismiss()
 
     private fun dismissSelf() {
         cancelTimeout()
@@ -632,6 +795,13 @@ internal class SEAAuthDelegate(
         }
 
         override fun onPageFinished(view: WebView?, url: String?) {
+            if (suppressNextPageFinished) {
+                suppressNextPageFinished = false
+                suppressFlagResetRunnable?.let { handler.removeCallbacks(it) }
+                suppressFlagResetRunnable = null
+                Log.d(TAG, "onPageFinished: suppressed (paired with the host-lookup retry's failed attempt)")
+                return
+            }
             if (!hasFinishedFirstLoad) {
                 hasFinishedFirstLoad = true
                 hideLoading()
@@ -649,9 +819,6 @@ internal class SEAAuthDelegate(
                     )
                 )
 
-                // Update title
-                updateHeaderTitle(view?.title)
-
                 // Check backstop after page finishes
                 if (url != null) {
                     checkCallbackBackstop(Uri.parse(url))
@@ -660,9 +827,39 @@ internal class SEAAuthDelegate(
         }
 
         override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
-            if (request?.isForMainFrame == true) {
-                handleNavigationFailure(error?.description?.toString() ?: "Unknown error")
+            if (request?.isForMainFrame != true) return
+
+            // See HOST_LOOKUP_RETRY_DELAY_MS: a spurious first-navigation
+            // DNS failure, not a real error. Retry once, silently — the
+            // loading spinner is already showing and stays showing, so
+            // nothing is visibly different to the user beyond a short delay.
+            if (error?.errorCode == WebViewClient.ERROR_HOST_LOOKUP &&
+                !hasRetriedAfterHostLookupFailure && !hasFinishedFirstLoad
+            ) {
+                hasRetriedAfterHostLookupFailure = true
+                Log.d(TAG, "onReceivedError: ERROR_HOST_LOOKUP on first navigation, retrying once")
+
+                // WebView pairs a main-frame onReceivedError with a
+                // subsequent onPageFinished for that same failed
+                // navigation. Without suppressing it, that spurious call
+                // would consume onPageFinished's one-shot
+                // hasFinishedFirstLoad guard before the retry below even
+                // starts — leaving the retry's own (real) onPageFinished
+                // silently ignored and the loading spinner stuck forever.
+                // Self-clears shortly after the retry starts in case a
+                // given WebView build doesn't pair them 1:1, so this can
+                // never permanently swallow a genuine page-finished event.
+                suppressNextPageFinished = true
+                suppressFlagResetRunnable?.let { handler.removeCallbacks(it) }
+                suppressFlagResetRunnable = Runnable { suppressNextPageFinished = false }
+                handler.postDelayed(suppressFlagResetRunnable!!, HOST_LOOKUP_RETRY_DELAY_MS * 2)
+
+                hostLookupRetryRunnable = Runnable { retryLoad() }
+                handler.postDelayed(hostLookupRetryRunnable!!, HOST_LOOKUP_RETRY_DELAY_MS)
+                return
             }
+
+            handleNavigationFailure(error?.description?.toString() ?: "Unknown error")
         }
 
         override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
@@ -674,10 +871,6 @@ internal class SEAAuthDelegate(
     // ---- WebChromeClient ----
 
     private fun createChromeClient(): WebChromeClient = object : WebChromeClient() {
-        override fun onReceivedTitle(view: WebView?, title: String?) {
-            updateHeaderTitle(title)
-        }
-
         override fun onCreateWindow(
             view: WebView?,
             isDialog: Boolean,
@@ -695,11 +888,6 @@ internal class SEAAuthDelegate(
             // §8.2: deny all media capture permissions.
             request?.deny()
         }
-    }
-
-    private fun updateHeaderTitle(title: String?) {
-        val sanitized = config.appearance.title ?: SEATitleSanitizer.sanitize(title)
-        titleTextView.text = sanitized
     }
 
     // ---- Helpers ----

@@ -177,7 +177,7 @@ class SEAAuthActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             ))
         } else {
-            val webViewContainer = delegate.createView(root)
+            val webViewContainer = delegate.createView(root) { delegate.onUserDismiss() }
             root.addView(webViewContainer, FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -190,7 +190,8 @@ class SEAAuthActivity : AppCompatActivity() {
 
     /**
      * Apply window attributes for bottom-sheet presentation: transparent
-     * background, bottom gravity, dim behind.
+     * background, bottom gravity. No dim behind (§18.1) — the sheet's own
+     * root container is fully transparent and non-interactive.
      */
     private fun applySheetWindowStyle() {
         window.apply {

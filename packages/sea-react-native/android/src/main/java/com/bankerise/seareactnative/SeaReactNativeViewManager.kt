@@ -68,6 +68,11 @@ class SeaReactNativeViewManager : SimpleViewManager<SeaReactNativeView>() {
         view.presentation = presentation ?: "sheet"
     }
 
+    @ReactProp(name = "authMode")
+    fun setAuthMode(view: SeaReactNativeView, authMode: String?) {
+        view.authMode = authMode ?: "embedded"
+    }
+
     @ReactProp(name = "appearance")
     fun setAppearance(view: SeaReactNativeView, appearance: ReadableMap?) {
         if (appearance == null) return

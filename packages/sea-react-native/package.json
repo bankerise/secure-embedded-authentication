@@ -1,5 +1,5 @@
 {
-  "name": "sea-react-native",
+  "name": "@bankerise-platform/sea-react-native",
   "version": "0.1.0",
   "description": "Bankerise SEA React Native bridge (Fabric)",
   "main": "./lib/module/index.js",
