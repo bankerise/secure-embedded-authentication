@@ -4,10 +4,10 @@ extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autoli
 rootProject.name = 'demo_rn'
 include ':app'
 
-// sea-core-android is resolved from JitPack via sea-react-native's own
-// build.gradle.kts (see packages/sea-react-native/android/build.gradle.kts),
-// the same way demo-rn's Podfile already resolves SEACore as a published pod
-// rather than a local path — this app validates the bridge the way an
-// external consumer actually sees it.
+// Local native library dependencies (monorepo)
+// sea-core-android is a plain Android library (not RN), so autolinking
+// won't discover it — include it manually.
+include(':sea-core-android')
+project(':sea-core-android').projectDir = file('../../../packages/sea-core-android')
 
 includeBuild('../../../node_modules/@react-native/gradle-plugin')

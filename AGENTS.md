@@ -12,7 +12,7 @@ normative spec is `bankerise_sea_specs-v1.0.md` and the iOS API contract is
 ```
 packages/sea-core-ios/       Swift package — the audited security core
 packages/sea-react-native/   Fabric bridge wrapping sea-core-ios
-packages/sea-core-android/   Android core library, distributed via JitPack
+packages/sea-core-android/   Not started yet
 apps/demo-ios/               Native device-lab harness (XcodeGen)
 apps/demo-rn/                RN bridge validation harness
 infra/                       Keycloak dev stack + realm provisioning

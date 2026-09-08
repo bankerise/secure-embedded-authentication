@@ -453,67 +453,8 @@ Notes:
   `SeaReactNative-Swift.h` header references `RCTEventEmitter` and
   `RCTPromise{Resolve,Reject}Block` but doesn't import them itself, so
   whatever `.mm` file includes that header first must import them.
-### Android — `sea-core-android`, `sea-react-native`'s android/, `apps/demo-android`
-
-`packages/sea-core-android` is the Android counterpart to `sea-core-ios`: a
-plain Android library (Kotlin), not itself a React Native module. Mirrors the
-iOS distribution model — a real, resolvable artifact addressed by this repo's
-git tags, no separate host to push to:
-
-- **Distribution is via [JitPack](https://jitpack.io)**, which builds
-  straight from a git tag on first request — the Gradle analogue of how
-  `SEACore.podspec`'s `s.source` points CocoaPods at this repo's
-  `sea-core-ios/#{version}` tag. Tag convention:
-  `sea-core-android/x.y.z` (same shape as the iOS tag). JitPack requires
-  slash-containing tags to be referenced with `~` instead of `/` in the
-  dependency version string, so the coordinate consumers use is:
-
-  ```kotlin
-  implementation("com.github.bankerise.secure-embedded-authentication:sea-core-android:sea-core-android~0.0.1")
-  ```
-
-  (groupId is always `com.github.<user>.<repo>` for a multi-module JitPack
-  build — see `packages/sea-core-android/build.gradle.kts`'s `publishing {}`
-  block, which sets that groupId explicitly so a local
-  `./gradlew publishToMavenLocal` lands at the same coordinate a real
-  consumer resolves.)
-- **`.github/workflows/sea-core-android.yml`** is a release gate, like
-  `sea-core-ios.yml`: on a `sea-core-android/*.*.*` tag push it runs the same
-  build JitPack itself will run on first resolution, so a broken tag fails
-  in CI instead of surfacing only when a consumer tries to build against it.
-  It never publishes anywhere — JitPack is the one doing that, on demand.
-- **There's no Gradle project at the repo root**, so JitPack can't
-  auto-detect a build file. The root `jitpack.yml` overrides the build with a
-  custom `install:` step that reuses `apps/demo-android`'s existing Gradle
-  project (which already includes `:sea-core-android` for the native demo
-  harness) rather than duplicating a second Gradle wrapper at the repo root
-  just for this.
-- **`packages/sea-react-native/android/build.gradle.kts`** depends on
-  `sea-core-android` by that JitPack coordinate (not
-  `project(":sea-core-android")`) and adds `https://jitpack.io` to its own
-  `repositories {}` block — so an external consumer resolves it purely via
-  RN autolinking, with no `settings.gradle`/`build.gradle` edits of their own
-  beyond what autolinking already requires for any RN native module. This is
-  what `showcase-retail/retail-front/retail-mobile` (an app outside this
-  monorepo) builds against.
-- **`apps/demo-rn/android/settings.gradle`** no longer includes
-  `sea-core-android` by local path — it resolves it the same way, through
-  `sea-react-native`'s own build file, matching how `demo-rn`'s iOS `Podfile`
-  already consumes `SEACore` as a published pod (`~> 0.0.1`) rather than a
-  local `:path`. `demo-rn` validates the bridge the way an external consumer
-  actually experiences it.
-- **`apps/demo-android`** (the native Kotlin harness, analogous to
-  `apps/demo-ios`) keeps its local
-  `project(':sea-core-android').projectDir = file(...)` include in
-  `settings.gradle.kts` — this mirrors `apps/demo-ios` consuming
-  `sea-core-ios` via a local SwiftPM path rather than a published package,
-  for the fastest inner loop when iterating on the core library itself.
-- First real release: push a `sea-core-android/x.y.z` tag once the CI gate
-  passes, then watch
-  `https://jitpack.io/com/github/bankerise/secure-embedded-authentication/sea-core-android~x.y.z/build.log`
-  for JitPack's own first build (unverified against the live service from
-  this environment — that log is the source of truth for whether the
-  `install:` step in `jitpack.yml` actually works end to end).
+- Android is not implemented (`sea-core-android` doesn't exist in this repo
+  yet).
 
 ## Realm changes
 

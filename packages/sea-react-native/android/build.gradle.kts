@@ -30,18 +30,7 @@ android {
     }
 }
 
-// sea-core-android is resolved from JitPack (see infra/README.md), not a
-// monorepo-local project reference — this repositories block lets an
-// external consumer resolve it purely via autolinking, with no changes to
-// their own settings.gradle/build.gradle beyond what autolinking already
-// requires for any RN native module.
-repositories {
-    maven { url = uri("https://jitpack.io") }
-}
-
 dependencies {
-    // Version string is the git tag "sea-core-android/x.y.z" with "/"
-    // replaced by "~", per JitPack's convention for tags containing slashes.
-    implementation("com.github.bankerise.secure-embedded-authentication:sea-core-android:sea-core-android~0.0.1")
+    implementation(project(":sea-core-android"))
     implementation("com.facebook.react:react-android:+")
 }
