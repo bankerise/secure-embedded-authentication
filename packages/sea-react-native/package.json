@@ -15,10 +15,12 @@
   "files": [
     "src",
     "lib",
+    "android",
     "ios",
     "cpp",
     "*.podspec",
     "react-native.config.js",
+    "!android/build",
     "!ios/build",
     "!**/__tests__",
     "!**/__fixtures__",
