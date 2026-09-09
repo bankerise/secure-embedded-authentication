@@ -87,11 +87,6 @@ using namespace facebook::react;
   NSString *authMode =
       viewProps.authMode == SeaReactNativeViewAuthMode::NativeBrowser ? @"nativeBrowser" : @"embedded";
 
-  NSMutableArray<NSString *> *allowedDomains = [NSMutableArray new];
-  for (const auto &domain : viewProps.allowedDomains) {
-    [allowedDomains addObject:RCTNSStringFromString(domain)];
-  }
-
   const auto &appearance = viewProps.appearance;
   UIColor *headerBackground = RCTUIColorFromSharedColor(appearance.headerBackground);
   UIColor *headerText = RCTUIColorFromSharedColor(appearance.headerText);
@@ -118,8 +113,6 @@ using namespace facebook::react;
                                                      authorizeUrl:authorizeUrl
                                                      presentation:presentation
                                                          authMode:authMode
-                                                   allowedDomains:allowedDomains
-                                                        timeoutMs:viewProps.timeoutMs
                                                  headerBackground:headerBackground
                                                        headerText:headerText
                                                            accent:accent
