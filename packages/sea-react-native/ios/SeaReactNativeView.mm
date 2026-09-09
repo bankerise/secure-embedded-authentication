@@ -10,7 +10,16 @@
 #import <react/renderer/components/SeaReactNativeViewSpec/RCTComponentViewHelpers.h>
 
 #import "RCTFabricComponentsPlugins.h"
+
+// Quoted form resolves under a plain static-lib pod build; under
+// `use_frameworks!` the generated Swift interface header only lands in the
+// framework's own Headers/ dir, reachable solely via the module-qualified
+// angle-bracket form.
+#if __has_include("SeaReactNative-Swift.h")
 #import "SeaReactNative-Swift.h"
+#else
+#import <SeaReactNative/SeaReactNative-Swift.h>
+#endif
 
 using namespace facebook::react;
 
@@ -78,6 +87,11 @@ using namespace facebook::react;
   NSString *authMode =
       viewProps.authMode == SeaReactNativeViewAuthMode::NativeBrowser ? @"nativeBrowser" : @"embedded";
 
+  NSMutableArray<NSString *> *allowedDomains = [NSMutableArray new];
+  for (const auto &domain : viewProps.allowedDomains) {
+    [allowedDomains addObject:RCTNSStringFromString(domain)];
+  }
+
   const auto &appearance = viewProps.appearance;
   UIColor *headerBackground = RCTUIColorFromSharedColor(appearance.headerBackground);
   UIColor *headerText = RCTUIColorFromSharedColor(appearance.headerText);
@@ -104,13 +118,15 @@ using namespace facebook::react;
                                                      authorizeUrl:authorizeUrl
                                                      presentation:presentation
                                                          authMode:authMode
+                                                   allowedDomains:allowedDomains
+                                                        timeoutMs:viewProps.timeoutMs
                                                  headerBackground:headerBackground
                                                        headerText:headerText
-                                                          accent:accent
-                                                   closeIconTint:closeIconTint
-                                                    cornerRadius:cornerRadius
-                                                           title:title
-                                                       callbacks:callbacks];
+                                                           accent:accent
+                                                    closeIconTint:closeIconTint
+                                                     cornerRadius:cornerRadius
+                                                            title:title
+                                                        callbacks:callbacks];
 }
 
 - (void)emitCaptured:(NSString *)paramsJson
