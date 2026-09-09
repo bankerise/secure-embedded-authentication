@@ -9,7 +9,7 @@ public enum SEANavigationDecision: Equatable {
     /// The navigation is permitted to proceed.
     case allow
     /// The navigation MUST be cancelled. `reason` is a coarse, non-PII
-    /// symbolic string (e.g. "scheme_not_https") — it never contains a raw
+    /// symbolic string (e.g. "scheme_not_allowed") — it never contains a raw
     /// host or URL, so it is always safe to fold directly into telemetry
     /// alongside a separately-computed `host_hash`.
     case block(reason: String)
@@ -42,8 +42,8 @@ public struct SEANavigationRequest: Equatable {
 /// Evaluated in this exact order, fail closed on any ambiguity:
 /// 1. Callback-scheme match preempts everything → `.capture`.
 /// 2. `about:blank` for the initial frame → `.allow`.
-/// 3. `https` + host in the effective allowlist + (main frame OR
-///    same-origin subresource) → `.allow`.
+/// 3. scheme in `env.allowedSchemes` + host in the effective allowlist +
+///    (main frame OR same-origin subresource) → `.allow`.
 /// 4. Everything else → `.block`.
 public enum SEANavigationPolicy {
     public static func decide(
@@ -69,9 +69,14 @@ public enum SEANavigationPolicy {
             return .allow
         }
 
-        // 3. https + allowlisted host + (main frame or same-origin subresource).
-        guard scheme == "https" else {
-            return .block(reason: "scheme_not_https")
+        // 3. allowed scheme + allowlisted host + (main frame or same-origin
+        //    subresource). Consults `env.allowedSchemes` — the same set
+        //    `SEAAuthorizeURLValidator` checks the authorize URL against —
+        //    rather than hardcoding "https", so a host app that opted into
+        //    "http" for local dev (SEASecurityConfig.plist's AllowedSchemes)
+        //    doesn't have its very first navigation silently blocked here.
+        guard env.allowedSchemes.contains(scheme) else {
+            return .block(reason: "scheme_not_allowed")
         }
         guard let rawHost = request.url.host, !rawHost.isEmpty else {
             return .block(reason: "missing_host")

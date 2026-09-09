@@ -109,6 +109,50 @@ final class SEANavigationPolicyTests: XCTestCase {
         }
     }
 
+    // MARK: - AllowedSchemes (contract §5/§6, mirrors SEAAuthorizeURLValidator)
+
+    func test_httpBlockedByDefault_evenWithHostAllowlisted() {
+        // `env` above uses the default allowedSchemes (unspecified -> {"https"}).
+        let decision = decide("http://auth.bank.com/login")
+        guard case .block(let reason) = decision else {
+            return XCTFail("expected .block, got \(decision)")
+        }
+        XCTAssertEqual(reason, "scheme_not_allowed")
+    }
+
+    func test_httpAllowed_whenEnvironmentExplicitlyAllowsIt() {
+        // Regression test: the very first navigation (the initial
+        // `webView.load(authorizeURL)`) goes through this same policy, so an
+        // authorize URL that already passed `SEAAuthorizeURLValidator`
+        // because the host app opted into "http" via SEASecurityConfig.plist
+        // must not be silently blocked here on that same scheme.
+        let devEnv = SEAEnvironment(
+            authDomains: ["auth.bank.com"],
+            callbackScheme: "bankerise-auth",
+            allowedSchemes: ["https", "http"]
+        )
+        let url = URL(string: "http://auth.bank.com/login")!
+        let request = SEANavigationRequest(url: url, isMainFrame: true, currentPageHost: nil)
+        let decision = SEANavigationPolicy.decide(for: request, environment: devEnv, hostAllowlist: [])
+        XCTAssertEqual(decision, .allow)
+    }
+
+    func test_schemeOtherThanExplicitAllowlist_stillBlocked_whenHttpAllowed() {
+        // Allowing "http" must not become "allow anything".
+        let devEnv = SEAEnvironment(
+            authDomains: ["auth.bank.com"],
+            callbackScheme: "bankerise-auth",
+            allowedSchemes: ["https", "http"]
+        )
+        let url = URL(string: "javascript:alert(1)")!
+        let request = SEANavigationRequest(url: url, isMainFrame: true, currentPageHost: nil)
+        let decision = SEANavigationPolicy.decide(for: request, environment: devEnv, hostAllowlist: [])
+        guard case .block(let reason) = decision else {
+            return XCTFail("expected .block, got \(decision)")
+        }
+        XCTAssertEqual(reason, "scheme_not_allowed")
+    }
+
     // MARK: - Rule 4: blocked-scheme corpus
 
     private let blockedSchemeURLs: [String] = [
