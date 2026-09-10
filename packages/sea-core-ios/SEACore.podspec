@@ -2,7 +2,7 @@ require 'json'
 
 Pod::Spec.new do |s|
   s.name         = 'SEACore'
-  s.version      = '0.0.4'
+  s.version      = '0.0.5'
   s.summary      = 'Bankerise SEA — hardened embedded WebView auth core (iOS).'
   s.homepage     = 'https://github.com/bankerise/secure-embedded-authentication'
   s.license      = { :type => 'Apache-2.0', :file => 'LICENSE' }
@@ -18,9 +18,17 @@ Pod::Spec.new do |s|
   # out the whole monorepo (pod root == repo root, so paths need to be
   # repo-root-relative), or a local `:path => 'packages/sea-core-ios'` for
   # dev (pod root == this directory, so paths are package-relative).
-  # Detect which one we're in by checking whether `Sources/` sits next to
-  # this podspec.
-  prefix = File.directory?(File.join(__dir__, 'Sources')) ? '' : 'packages/sea-core-ios/'
-  s.source_files = "#{prefix}Sources/SEACore/**/*.swift"
-  s.resources    = "#{prefix}Sources/SEACore/Resources/**/*.lproj"
+  #
+  # A `File.directory?(__dir__ + 'Sources')` runtime check can't tell these
+  # apart reliably: `__dir__` reflects wherever the podspec *file* physically
+  # sits when Ruby evaluates it, which — for `pod spec lint <local path>` —
+  # is this package directory (Sources/ sits right next to it) even though
+  # the linter then validates source_files against the git+tag source, which
+  # checks out the whole monorepo (repo-root-relative). That mismatch made
+  # `pod spec lint` fail with "pattern did not match any file" despite both
+  # real consumption paths working. Listing both candidate patterns sidesteps
+  # detection entirely — whichever one doesn't match the actual pod root
+  # simply contributes no files.
+  s.source_files = ['Sources/SEACore/**/*.swift', 'packages/sea-core-ios/Sources/SEACore/**/*.swift']
+  s.resources    = ['Sources/SEACore/Resources/**/*.lproj', 'packages/sea-core-ios/Sources/SEACore/Resources/**/*.lproj']
 end
