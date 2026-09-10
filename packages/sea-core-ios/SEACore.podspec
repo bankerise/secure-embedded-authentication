@@ -2,7 +2,7 @@ require 'json'
 
 Pod::Spec.new do |s|
   s.name         = 'SEACore'
-  s.version      = '0.0.1'
+  s.version      = '0.0.4'
   s.summary      = 'Bankerise SEA — hardened embedded WebView auth core (iOS).'
   s.homepage     = 'https://github.com/bankerise/secure-embedded-authentication'
   s.license      = { :type => 'Apache-2.0', :file => 'LICENSE' }
