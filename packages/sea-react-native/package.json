@@ -47,7 +47,7 @@
     "url": "git+https://github.com/bankerise/secure-embedded-authentication.git"
   },
   "author": "Bankerise",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/bankerise/secure-embedded-authentication/issues"
   },

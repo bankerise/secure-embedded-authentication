@@ -88,7 +88,6 @@ final class SEAAuthViewController: UIViewController {
 
         headerView.translatesAutoresizingMaskIntoConstraints = false
         headerView.onBack = { [weak self] in self?.headerBackTapped() }
-        headerView.onClose = { [weak self] in self?.headerCloseTapped() }
         view.addSubview(headerView)
 
         loadingView.translatesAutoresizingMaskIntoConstraints = false
@@ -122,19 +121,11 @@ final class SEAAuthViewController: UIViewController {
         kvoTokens.append(webView.observe(\.canGoBack, options: [.new]) { [weak self] webView, _ in
             self?.headerView.setBackVisible(webView.canGoBack)
         })
-        kvoTokens.append(webView.observe(\.title, options: [.new]) { [weak self] _, _ in
-            self?.updateHeaderTitle()
-        })
         // POST-redirect backstop (contract §6): the callback URL is also
         // checked here via KVO, independent of decidePolicyFor/didCommit.
         kvoTokens.append(webView.observe(\.url, options: [.new]) { [weak self] webView, _ in
             self?.checkCallbackBackstop(url: webView.url)
         })
-    }
-
-    private func updateHeaderTitle() {
-        let title = config.appearance.title ?? SEATitleSanitizer.sanitize(webView.title)
-        headerView.setTitle(title)
     }
 
     // MARK: - Loading / error UI
@@ -189,14 +180,6 @@ final class SEAAuthViewController: UIViewController {
 
     private func headerBackTapped() {
         webView.goBack()
-    }
-
-    private func headerCloseTapped() {
-        if let error = currentDisplayedError {
-            terminalError(error)
-        } else {
-            terminalCancel()
-        }
     }
 
     // MARK: - Timeout
@@ -372,7 +355,6 @@ extension SEAAuthViewController: WKNavigationDelegate {
         hideLoading()
         clearError()
         isModalInPresentation = false
-        updateHeaderTitle()
 
         let ms: Int
         if let start = loadStartDate {
@@ -483,11 +465,8 @@ enum SEATitleSanitizer {
 
 private final class SEAHeaderView: UIView {
     var onBack: (() -> Void)?
-    var onClose: (() -> Void)?
 
     private let backButton = UIButton(type: .system)
-    private let titleLabel = UILabel()
-    private let closeButton = UIButton(type: .system)
 
     init(appearance: SEAAppearance) {
         super.init(frame: .zero)
@@ -499,38 +478,14 @@ private final class SEAHeaderView: UIView {
         backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         backButton.accessibilityLabel = "Back"
 
-        titleLabel.textColor = appearance.headerText
-        titleLabel.font = .preferredFont(forTextStyle: .headline)
-        titleLabel.textAlignment = .center
-        titleLabel.text = appearance.title
-        titleLabel.adjustsFontForContentSizeCategory = true
-        titleLabel.numberOfLines = 1
-
-        closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
-        closeButton.tintColor = appearance.closeIconTint
-        closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
-        closeButton.accessibilityLabel = SEAStrings.actionClose
-
-        for subview in [backButton, titleLabel, closeButton] {
-            subview.translatesAutoresizingMaskIntoConstraints = false
-            addSubview(subview)
-        }
+        backButton.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(backButton)
 
         NSLayoutConstraint.activate([
             backButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             backButton.centerYAnchor.constraint(equalTo: centerYAnchor),
             backButton.widthAnchor.constraint(equalToConstant: 32),
-            backButton.heightAnchor.constraint(equalToConstant: 32),
-
-            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            closeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            closeButton.widthAnchor.constraint(equalToConstant: 32),
-            closeButton.heightAnchor.constraint(equalToConstant: 32),
-
-            titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: closeButton.leadingAnchor, constant: -8)
+            backButton.heightAnchor.constraint(equalToConstant: 32)
         ])
     }
 
@@ -542,12 +497,7 @@ private final class SEAHeaderView: UIView {
         backButton.isHidden = !visible
     }
 
-    func setTitle(_ title: String?) {
-        titleLabel.text = title
-    }
-
     @objc private func backTapped() { onBack?() }
-    @objc private func closeTapped() { onClose?() }
 }
 
 // MARK: - Loading view
