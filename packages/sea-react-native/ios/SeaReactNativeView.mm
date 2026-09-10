@@ -168,3 +168,19 @@ using namespace facebook::react;
 }
 
 @end
+
+// Autolinking's third-party Fabric component discovery (react-native/scripts/
+// codegen/generate-artifacts-executor.js) doesn't read codegenConfig for this
+// — it regex-scans every .mm file in the library for a
+// `Class<RCTComponentViewProtocol> <Name>Cls(void)` function and only then
+// registers `<Name>` in the generated RCTThirdPartyComponentsProvider.mm
+// lookup table RN uses at runtime to instantiate the native view by name.
+// Without this, <SecureAuthenticationView> silently renders nothing — no
+// crash, no RCTLog, nothing — because there is no registered class to
+// instantiate.
+#ifdef RCT_NEW_ARCH_ENABLED
+Class<RCTComponentViewProtocol> SeaReactNativeViewCls(void)
+{
+  return SeaReactNativeView.class;
+}
+#endif
