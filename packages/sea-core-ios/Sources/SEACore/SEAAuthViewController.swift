@@ -36,7 +36,7 @@ final class SEAAuthViewController: UIViewController {
         self.environment = environment
         self.callbacks = callbacks
         self.webView = SEAWebViewFactory.makeWebView()
-        self.headerView = SEAHeaderView(appearance: config.appearance)
+        self.headerView = SEAHeaderView(appearance: config.appearance, presentation: config.presentation)
         self.loadingView = SEALoadingView(accent: config.appearance.accent)
         super.init(nibName: nil, bundle: nil)
 
@@ -88,6 +88,7 @@ final class SEAAuthViewController: UIViewController {
 
         headerView.translatesAutoresizingMaskIntoConstraints = false
         headerView.onBack = { [weak self] in self?.headerBackTapped() }
+        headerView.onClose = { [weak self] in self?.headerCloseTapped() }
         view.addSubview(headerView)
 
         loadingView.translatesAutoresizingMaskIntoConstraints = false
@@ -180,6 +181,14 @@ final class SEAAuthViewController: UIViewController {
 
     private func headerBackTapped() {
         webView.goBack()
+    }
+
+    private func headerCloseTapped() {
+        if let error = currentDisplayedError {
+            terminalError(error)
+        } else {
+            terminalCancel()
+        }
     }
 
     // MARK: - Timeout
@@ -465,10 +474,16 @@ enum SEATitleSanitizer {
 
 private final class SEAHeaderView: UIView {
     var onBack: (() -> Void)?
+    var onClose: (() -> Void)?
 
     private let backButton = UIButton(type: .system)
+    private let closeButton = UIButton(type: .system)
 
-    init(appearance: SEAAppearance) {
+    // Fullscreen presentation has no swipe-to-dismiss gesture (that's a
+    // pageSheet/UISheetPresentationController affordance), so it's the only
+    // mode that needs an explicit close control — sheet presentation relies
+    // on swipe-to-dismiss instead (contract §9, presentationControllerDidDismiss).
+    init(appearance: SEAAppearance, presentation: SEAPresentation) {
         super.init(frame: .zero)
         backgroundColor = appearance.headerBackground
 
@@ -478,14 +493,27 @@ private final class SEAHeaderView: UIView {
         backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         backButton.accessibilityLabel = "Back"
 
-        backButton.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(backButton)
+        closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
+        closeButton.tintColor = appearance.closeIconTint
+        closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        closeButton.accessibilityLabel = SEAStrings.actionClose
+        closeButton.isHidden = presentation != .fullscreen
+
+        for subview in [backButton, closeButton] {
+            subview.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(subview)
+        }
 
         NSLayoutConstraint.activate([
             backButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             backButton.centerYAnchor.constraint(equalTo: centerYAnchor),
             backButton.widthAnchor.constraint(equalToConstant: 32),
-            backButton.heightAnchor.constraint(equalToConstant: 32)
+            backButton.heightAnchor.constraint(equalToConstant: 32),
+
+            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+            closeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            closeButton.widthAnchor.constraint(equalToConstant: 32),
+            closeButton.heightAnchor.constraint(equalToConstant: 32)
         ])
     }
 
@@ -498,6 +526,7 @@ private final class SEAHeaderView: UIView {
     }
 
     @objc private func backTapped() { onBack?() }
+    @objc private func closeTapped() { onClose?() }
 }
 
 // MARK: - Loading view
