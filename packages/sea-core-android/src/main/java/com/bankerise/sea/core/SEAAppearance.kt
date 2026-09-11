@@ -26,7 +26,7 @@ data class SEAAppearance(
             headerText = 0xFF212121.toInt(),          // On-surface
             accent = 0xFF1976D2.toInt(),              // Blue 700
             closeIconTint = 0xFF757575.toInt(),       // Grey 600
-            cornerRadius = 28f,                        // Material bottom-sheet default
+            cornerRadius = 16f,                        // dp — matches iOS SEAAppearance.default
             title = null,
             showsGrabber = true,
             sheetTopOffset = 64f

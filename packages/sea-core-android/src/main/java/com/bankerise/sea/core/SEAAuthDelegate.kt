@@ -61,8 +61,22 @@ internal class SEAAuthDelegate(
          *  regardless of how far it was actually dragged. */
         private const val DISMISS_FLING_VELOCITY_DP_PER_S = 800f
 
-        private const val SHEET_DISMISS_ANIM_MS = 200L
-        private const val SHEET_SNAP_BACK_ANIM_MS = 200L
+        /**
+         * Shared duration/easing for every sheet motion — drag-dismiss,
+         * drag-cancel snap-back, and (via sea_slide_up/down.xml, which use
+         * the matching @interpolator/sea_sheet_motion curve) the
+         * open/programmatic-close window transition. One curve everywhere
+         * so the sheet reads as a single consistent motion system rather
+         * than several independently-tuned animations, mirroring iOS's
+         * single system-driven sheet-presentation animation.
+         */
+        private const val SHEET_ANIM_MS = 300L
+        private val SHEET_MOTION_INTERPOLATOR = android.view.animation.PathInterpolator(0.4f, 0f, 0.2f, 1f)
+
+        /** Height of the always-present top drag-to-dismiss zone (§18.1) —
+         *  separate from the header so dragging works identically whether
+         *  or not a title/header is shown. */
+        private const val DRAG_ZONE_HEIGHT_DP = 32
 
         /**
          * A WebView's very first navigation in a process can spuriously fail
@@ -90,7 +104,9 @@ internal class SEAAuthDelegate(
 
     lateinit var webView: WebView
         private set
-    lateinit var toolbar: LinearLayout
+    /** `null` for a sheet with no title (§18.1) — the header is omitted
+     *  entirely rather than shown empty. Always set for fullscreen. */
+    var toolbar: LinearLayout? = null
         private set
     lateinit var titleTextView: TextView
         private set
@@ -128,8 +144,9 @@ internal class SEAAuthDelegate(
             setBackgroundColor(config.appearance.headerBackground)
         }
 
-        toolbar = createToolbar(parent, showsCloseButton = true, onClose = onDismiss)
-        container.addView(toolbar)
+        val fullscreenToolbar = createToolbar(parent, showsCloseButton = true, onClose = onDismiss)
+        toolbar = fullscreenToolbar
+        container.addView(fullscreenToolbar)
 
         val overlay = createOverlay(parent)
         container.addView(overlay)
@@ -164,23 +181,42 @@ internal class SEAAuthDelegate(
     /**
      * Build the bottom-sheet view hierarchy (§18.1).
      *
-     * Wraps the WebView + toolbar in a rounded-corner sheet that slides up
-     * from the bottom. No backdrop dimming and no close button — [onDismiss]
-     * fires when the user drags the sheet's header (toolbar/grabber)
-     * downward past the dismiss threshold, taps outside the sheet's bounds,
-     * or triggers system back ([handleBackPress] / [onUserDismiss]).
+     * Wraps the WebView (+ header, only when a title is configured) in a
+     * rounded-corner sheet that slides up from the bottom. No backdrop
+     * dimming and no close button — [onDismiss] fires when the user drags
+     * the sheet's top drag zone downward past the dismiss threshold, taps
+     * outside the sheet's bounds, or triggers system back
+     * ([handleBackPress] / [onUserDismiss]).
      */
     fun createSheetView(parent: ViewGroup, onDismiss: () -> Unit): View {
         val sheetRoot = createSheetRoot(parent)
         val sheet = createSheetContainer(parent)
         container = sheet
-        val grabber = if (config.appearance.showsGrabber) createGrabber(parent) else null
-        grabber?.let { sheet.addView(it) }
-        toolbar = createToolbar(parent, showsCloseButton = false, onClose = onDismiss)
-        sheet.addView(toolbar)
+
+        // The drag zone is always present — it, not the header, is the
+        // drag-to-dismiss surface (§18.1), so dragging keeps working
+        // identically whether or not a header is shown below it.
+        val dragZone = createDragZone(parent)
+        sheet.addView(dragZone)
+
+        // No title -> no header at all (§18.1): an empty toolbar is just
+        // dead space with nothing to show, since the sheet already has no
+        // close button of its own. Only reserve the header's height when
+        // there's an actual title to put in it.
+        val hasTitle = !config.appearance.title.isNullOrBlank()
+        if (hasTitle) {
+            val sheetToolbar = createToolbar(parent, showsCloseButton = false, onClose = onDismiss, heightDp = 52)
+            toolbar = sheetToolbar
+            sheet.addView(sheetToolbar)
+        }
 
         val overlay = createOverlay(parent)
         sheet.addView(overlay)
+        // Missing here previously: the fullscreen path already padded its
+        // WebView container for the live IME inset (see applyImeInsetPadding
+        // above); the sheet path never did, so the keyboard could cover the
+        // focused field with nothing to scroll it back into view against.
+        applyImeInsetPadding(overlay)
         sheetRoot.addView(sheet)
 
         // Swallow taps that land within the sheet's own bounds so they
@@ -190,11 +226,10 @@ internal class SEAAuthDelegate(
         sheet.setOnClickListener { }
         sheetRoot.setOnClickListener { onDismiss() }
 
-        // Drag handle is restricted to the header (grabber + toolbar), never
-        // the WebView content, so it never competes with the WebView's own
-        // touch/scroll handling.
-        attachDragToDismiss(toolbar, sheet, onDismiss)
-        grabber?.let { attachDragToDismiss(it, sheet, onDismiss) }
+        // Drag handle is the top drag zone only — never the header/title —
+        // so it never competes with the WebView's own touch/scroll handling
+        // and keeps working even when the header is omitted above.
+        attachDragToDismiss(dragZone, sheet, onDismiss)
 
         return sheetRoot
     }
@@ -202,7 +237,17 @@ internal class SEAAuthDelegate(
     /**
      * Full-screen container that hosts and bottom-aligns the sheet.
      * Transparent, non-interactive — no dimming and no tap-to-dismiss
-     * (§18.1: dismissal is drag-to-dismiss on the header, or system back).
+     * (§18.1: dismissal is drag-to-dismiss on the top drag zone, or system
+     * back).
+     *
+     * The sheet's own height is *not* set here — [createSheetContainer]
+     * uses `MATCH_PARENT` and lets this padding do the work, so the visible
+     * sheet is always derived from a live layout pass rather than a
+     * one-time screen-height snapshot. That matters because a snapshot
+     * height can end up taller than the window's *current* available space
+     * once the keyboard opens, pushing the sheet's rounded top corners
+     * outside the visible/clipped area (§18.1's original bug: the sheet
+     * appeared to "lose" its border radius whenever the keyboard showed).
      */
     private fun createSheetRoot(parent: ViewGroup): FrameLayout {
         return FrameLayout(parent.context).apply {
@@ -210,21 +255,50 @@ internal class SEAAuthDelegate(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
+            setPadding(0, dpToPx(parent, config.appearance.sheetTopOffset.toInt()), 0, 0)
+        }
+    }
+
+    /**
+     * The sheet's always-present top strip: hosts the grabber (if shown)
+     * and is the sole drag-to-dismiss touch target (§18.1) — kept separate
+     * from the header so the gesture is available identically whether or
+     * not a title/header is present, and so the header's own content is
+     * never itself a drag target.
+     */
+    private fun createDragZone(parent: ViewGroup): FrameLayout {
+        return FrameLayout(parent.context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dpToPx(parent, DRAG_ZONE_HEIGHT_DP)
+            )
+            if (config.appearance.showsGrabber) {
+                addView(
+                    createGrabber(parent),
+                    FrameLayout.LayoutParams(
+                        dpToPx(parent, 40), dpToPx(parent, 4), Gravity.CENTER
+                    )
+                )
+            }
         }
     }
 
     /**
      * Attaches a downward-drag-to-dismiss gesture to [handle] (the sheet's
-     * header — toolbar and/or grabber). Deliberately restricted to the
-     * header rather than the whole sheet so it never intercepts the
-     * WebView's own touch/scroll handling.
+     * top drag zone — see [createDragZone]). Deliberately restricted to
+     * that zone rather than the whole sheet so it never intercepts the
+     * WebView's own touch/scroll handling, and deliberately *not* the
+     * header, so dismissing never depends on whether a title is shown.
      *
      * Downward drag translates [sheet] by the drag distance, clamped so it
      * can never be dragged upward past its resting position. On release,
      * [onDismissed] fires — after animating the sheet fully off-screen —
      * if the drag passed [DISMISS_DISTANCE_FRACTION] of the sheet's height
      * or the release velocity passed [DISMISS_FLING_VELOCITY_DP_PER_S];
-     * otherwise the sheet animates back to its resting position.
+     * otherwise the sheet animates back to its resting position using the
+     * same [SHEET_MOTION_INTERPOLATOR] curve as the open/close window
+     * transition (sea_slide_up/down.xml), so every sheet motion — open,
+     * close, drag-dismiss, and snap-back — reads as one consistent system.
      */
     private fun attachDragToDismiss(handle: View, sheet: View, onDismissed: () -> Unit) {
         var velocityTracker: VelocityTracker? = null
@@ -263,13 +337,15 @@ internal class SEAAuthDelegate(
                     if (shouldDismiss) {
                         sheet.animate()
                             .translationY(sheet.height.toFloat())
-                            .setDuration(SHEET_DISMISS_ANIM_MS)
+                            .setInterpolator(SHEET_MOTION_INTERPOLATOR)
+                            .setDuration(SHEET_ANIM_MS)
                             .withEndAction { onDismissed() }
                             .start()
                     } else {
                         sheet.animate()
                             .translationY(0f)
-                            .setDuration(SHEET_SNAP_BACK_ANIM_MS)
+                            .setInterpolator(SHEET_MOTION_INTERPOLATOR)
+                            .setDuration(SHEET_ANIM_MS)
                             .start()
                     }
                     true
@@ -279,31 +355,54 @@ internal class SEAAuthDelegate(
         }
     }
 
+    /**
+     * `cornerRadius` (like every other appearance dimension here) is
+     * specified in dp — matching iOS's `SEAAppearance.cornerRadius`, which
+     * is in points and so is already automatically screen-density-correct.
+     * `Outline.setRoundRect`/`GradientDrawable.cornerRadii` both want raw
+     * pixels, so this converts once via [dpToPxF] rather than passing the
+     * dp number straight through — using it unconverted previously meant
+     * the configured radius rendered far smaller than intended on anything
+     * but a 1x-density screen.
+     */
     private fun createSheetContainer(parent: ViewGroup): LinearLayout {
-        val cornerRadius = config.appearance.cornerRadius
-        val topOffset = dpToPx(parent, config.appearance.sheetTopOffset.toInt())
-        val screenHeight = parent.resources.displayMetrics.heightPixels
+        val cornerRadiusPx = dpToPxF(parent, config.appearance.cornerRadius)
         return LinearLayout(parent.context).apply {
             orientation = LinearLayout.VERTICAL
+            // MATCH_PARENT, not a precomputed pixel height: this view's
+            // *parent* (createSheetRoot) already reserves sheetTopOffset via
+            // padding, so this always fills exactly whatever height is
+            // actually available right now — including after the keyboard
+            // changes it — instead of a stale screen-height snapshot.
             layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                screenHeight - topOffset
+                ViewGroup.LayoutParams.MATCH_PARENT
             ).apply {
                 gravity = Gravity.BOTTOM
             }
             clipToOutline = true
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
-                    outline.setRoundRect(0, 0, view.width, view.height, cornerRadius)
+                    outline.setRoundRect(0, 0, view.width, view.height, cornerRadiusPx)
                 }
             }
             background = GradientDrawable().apply {
                 cornerRadii = floatArrayOf(
-                    cornerRadius, cornerRadius,
-                    cornerRadius, cornerRadius,
+                    cornerRadiusPx, cornerRadiusPx,
+                    cornerRadiusPx, cornerRadiusPx,
                     0f, 0f, 0f, 0f
                 )
                 setColor(Color.WHITE)
+            }
+            // The outline used for `clipToOutline` above must track this
+            // view's *current* bounds, or the rounded-corner clip goes
+            // stale on resize — which is what reads as "the sheet lost its
+            // border radius" whenever this view's live-derived height
+            // above actually changes (e.g. the keyboard opening).
+            addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                if (right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop) {
+                    v.invalidateOutline()
+                }
             }
         }
     }
@@ -312,13 +411,6 @@ internal class SEAAuthDelegate(
         return ImageView(parent.context).apply {
             setImageResource(R.drawable.sea_sheet_grabber)
             setColorFilter(config.appearance.closeIconTint)
-            layoutParams = LinearLayout.LayoutParams(
-                dpToPx(parent, 40), dpToPx(parent, 4)
-            ).apply {
-                gravity = Gravity.CENTER_HORIZONTAL
-                topMargin = dpToPx(parent, 12)
-                bottomMargin = dpToPx(parent, 8)
-            }
         }
     }
 
@@ -327,25 +419,32 @@ internal class SEAAuthDelegate(
      *   close button; it dismisses via drag, tap-outside, or system back.
      * @param onClose invoked when the close button is tapped. Unused (never
      *   wired to anything) when [showsCloseButton] is false.
+     * @param heightDp fullscreen keeps its original 72dp toolbar; the
+     *   sheet's title bar (only ever built when there *is* a title — see
+     *   [createSheetView]) uses a slimmer 52dp, closer to iOS's header.
      */
-    private fun createToolbar(parent: ViewGroup, showsCloseButton: Boolean, onClose: () -> Unit): LinearLayout {
+    private fun createToolbar(
+        parent: ViewGroup,
+        showsCloseButton: Boolean,
+        onClose: () -> Unit,
+        heightDp: Int = 72
+    ): LinearLayout {
         return LinearLayout(parent.context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setBackgroundColor(Color.TRANSPARENT)
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dpToPx(parent, 72)
+                dpToPx(parent, heightDp)
             )
 
-            // No title text is ever displayed here — this TextView stays
-            // only as a flexible spacer so the toolbar's layout balances
-            // correctly with or without the close button.
             titleTextView = TextView(parent.context).apply {
+                text = config.appearance.title
                 setTextColor(config.appearance.headerText)
                 textSize = 18f
                 maxLines = 1
                 ellipsize = android.text.TextUtils.TruncateAt.END
+                textAlignment = View.TEXT_ALIGNMENT_CENTER
             }
             addView(titleTextView, LinearLayout.LayoutParams(
                 0,
@@ -472,12 +571,6 @@ internal class SEAAuthDelegate(
 
         // Start screen capture monitoring (§17.1)
         activity?.let { startCaptureMonitoring(it) }
-
-        container.viewTreeObserver.addOnGlobalLayoutListener {
-            val height = container.rootView.height
-            val visible = container.windowVisibility == View.VISIBLE
-            // Keyboard visible detection for sheet resize (§18.1)
-        }
 
         showLoading()
         loadStartDate = System.currentTimeMillis()
@@ -895,5 +988,9 @@ internal class SEAAuthDelegate(
     private fun dpToPx(view: android.view.View, dp: Int): Int {
         val density = view.resources.displayMetrics.density
         return (dp * density + 0.5f).toInt()
+    }
+
+    private fun dpToPxF(view: android.view.View, dp: Float): Float {
+        return dp * view.resources.displayMetrics.density
     }
 }

@@ -18,4 +18,19 @@ buildscript {
     }
 }
 
+// Gradle scopes repository resolution to the project that owns the
+// configuration being resolved (:app), not the project that declares the
+// dependency — sea-react-native's own repositories {} block (see its
+// android/build.gradle.kts) only covers *that module's* own configurations,
+// it doesn't propagate to :app resolving its classpath. So the app-level
+// repository addition below is required here for the exact same reason an
+// external consumer needs one in their own android/build.gradle — see
+// packages/sea-react-native/README.md's Installation section and
+// infra/README.md's Android section.
+allprojects {
+    repositories {
+        maven { url "$rootDir/../../../packages/sea-react-native/android/local-maven" }
+    }
+}
+
 apply plugin: "com.facebook.react.rootproject"
