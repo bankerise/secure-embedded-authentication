@@ -20,8 +20,11 @@ public enum SEAAuthorizeURLValidator {
             return .failure(.malformed)
         }
 
-        // 1. scheme == "https" (case-insensitive).
-        guard let scheme = components.scheme, scheme.lowercased() == "https" else {
+        // 1. scheme is a member of env.allowedSchemes (case-insensitive).
+        //    Default {"https"}; a host app may add "http" via
+        //    SEASecurityConfig.plist's AllowedSchemes key for local dev
+        //    behind a TLS-terminating reverse proxy (never in production).
+        guard let scheme = components.scheme, env.allowedSchemes.contains(scheme.lowercased()) else {
             return .failure(.scheme)
         }
 

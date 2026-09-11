@@ -126,14 +126,19 @@ export async function gatewayLogout(gatewayBaseURL: string): Promise<string> {
     method: 'POST',
     headers: { Accept: 'application/json, text/plain, */*' },
   });
+
+  
+  
   const text = await response.text();
   if (!response.ok) {
     throw new Error(`Logout endpoint returned HTTP ${response.status}: ${text}`);
   }
   const extracted = extractLogoutURL(text);
+  console.log('extracted ', extracted);
   if (extracted) return extracted;
   throw new Error(`Gateway /gw/logout response had no logout URL: ${text}`);
 }
+
 
 /**
  * The exact `/gw/logout` JSON shape isn't pinned by the contract, so be
@@ -157,4 +162,28 @@ function extractLogoutURL(rawBody: string): string | null {
     return trimmed.replace(/^"+|"+$/g, '');
   }
   return null;
+}
+
+
+export async function keycloakSessionLogout(urlKeycloak: string) {
+  const response = await fetch(urlKeycloak, {
+    method: 'GET',
+    headers: { Accept: 'application/json, text/plain, */*' },
+  });
+  console.log('response logout ', response);
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Logout from keycloak ${response.status}: ${text}`);
+  }
+  
+  
+  
+  // const text = await response.text();
+  // if (!response.ok) {
+  //   throw new Error(`Logout endpoint returned HTTP ${response.status}: ${text}`);
+  // }
+  // const extracted = extractLogoutURL(text);
+  // console.log('extracted ', extracted);
+  // if (extracted) return extracted;
+  // throw new Error(`Gateway /gw/logout response had no logout URL: ${text}`);
 }

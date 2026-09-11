@@ -11,8 +11,11 @@ worth the dependency for three screens), mirroring
 `apps/demo-ios`'s Config/Result/Telemetry screens:
 
 - **Config** (`src/screens/ConfigScreen.tsx`) — gateway base URL, mock
-  gateway toggle + editable mock redirect URL, allowed domains, presentation
-  (sheet/fullscreen), timeout, Start login, Logout, Purge web data.
+  gateway toggle + editable mock redirect URL, presentation (sheet/fullscreen),
+  Start login, Logout, Purge web data. The security knobs (callback scheme,
+  allowed domains/ports, max URL length, timeout) are deliberately absent:
+  they come from the native platform config (`bankerise-sea.properties` on
+  Android, `SEASecurityConfig.plist` on iOS), not from JS.
 - **Result** (`src/screens/ResultScreen.tsx`) — the last `onCaptured` /
   `onCancelled` / `onError` outcome, raw params shown verbatim (this is a
   dev harness, not a production integration).

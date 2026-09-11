@@ -1,4 +1,4 @@
-import { ALLOWED_DOMAINS, MOCK_AUTHORIZE_URL } from './mockGateway';
+import { MOCK_AUTHORIZE_URL } from './mockGateway';
 
 /**
  * Tester-facing configuration for the demo harness (mirrors
@@ -8,10 +8,16 @@ import { ALLOWED_DOMAINS, MOCK_AUTHORIZE_URL } from './mockGateway';
  * Simplification vs. the iOS demo: kept in memory (React state) rather than
  * persisted across launches — no UserDefaults-equivalent dependency in this
  * bridge-validation harness.
+ *
+ * Security knobs (callback scheme, allowed domains, allowed ports, max URL
+ * length, timeout) are deliberately NOT here: they are enforced by the
+ * native platform config — `bankerise-sea.properties` on Android and
+ * `SEASecurityConfig.plist` on iOS — and are no longer props on
+ * `SecureAuthenticationView`.
  */
 export type Settings = Readonly<{
   gatewayBaseURL: string;
-  allowedDomains: string;
+  appVersionKey: string;
   presentation: 'sheet' | 'fullscreen';
   // Runner selection (spec §10.4). 'embedded' (default) is the normal SEA
   // path; 'nativeBrowser' hands the whole login attempt to
@@ -22,21 +28,16 @@ export type Settings = Readonly<{
   mockRedirectURL: string;
 }>;
 
-export const DEFAULT_SETTINGS: Settings = {
-  // Our own gateway.ts <-> local backend traffic. Not passed to SEACore.
-  gatewayBaseURL: 'http://localhost:8080',
-  allowedDomains: ALLOWED_DOMAINS.join(','),
-  presentation: 'sheet',
-  authMode: 'embedded',
-  timeoutMs: 120_000,
-  useMockGateway: true,
-  mockRedirectURL: MOCK_AUTHORIZE_URL,
-};
-
-/** Comma list -> trimmed, non-empty array, in the shape SEAConfig expects. */
-export function allowedDomainsArray(settings: Settings): string[] {
-  return settings.allowedDomains
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+function buildDefaults(): Settings {
+  return {
+    gatewayBaseURL: 'http://localhost:8080',
+    appVersionKey: '4ZvAEYVC2Xk3',
+    presentation: 'sheet',
+    authMode: 'embedded',
+    timeoutMs: 120_000,
+    useMockGateway: true,
+    mockRedirectURL: MOCK_AUTHORIZE_URL,
+  };
 }
+
+export const DEFAULT_SETTINGS: Settings = buildDefaults();

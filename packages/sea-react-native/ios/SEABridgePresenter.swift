@@ -34,8 +34,6 @@ public final class SEABridgePresenter: NSObject {
         authorizeUrl: String,
         presentation: String,
         authMode: String,
-        allowedDomains: [String],
-        timeoutMs: Int,
         headerBackground: UIColor?,
         headerText: UIColor?,
         accent: UIColor?,
@@ -61,12 +59,15 @@ public final class SEABridgePresenter: NSObject {
         if let cornerRadius { appearance.cornerRadius = CGFloat(truncating: cornerRadius) }
         appearance.title = title.isEmpty ? nil : title
 
+        // Security knobs (allowedDomains, timeoutMs, callbackScheme, ports,
+        // URL-length cap) are not bridge props: they are owned by the
+        // platform config — `SEASecurityConfig.plist` read by
+        // `SEAEnvironment.current` (§3.3) plus `SEAConfig`'s own defaults.
+        // Host narrowing and timeout no longer apply from JS (spec §7.1/§7.3).
         let config = SEAConfig(
             authorizeURL: url,
-            allowedDomains: allowedDomains,
             presentation: presentation == "fullscreen" ? .fullscreen : .sheet,
             appearance: appearance,
-            timeoutMs: timeoutMs > 0 ? timeoutMs : 120_000,
             authMode: authMode == "nativeBrowser" ? .nativeBrowser : .embedded
         )
 

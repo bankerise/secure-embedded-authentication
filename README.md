@@ -3,7 +3,7 @@
 [![sea-core-ios](https://github.com/bankerise/secure-embedded-authentication/actions/workflows/sea-core-ios.yml/badge.svg)](https://github.com/bankerise/secure-embedded-authentication/actions/workflows/sea-core-ios.yml)
 [![sea-react-native](https://github.com/bankerise/secure-embedded-authentication/actions/workflows/sea-react-native.yml/badge.svg)](https://github.com/bankerise/secure-embedded-authentication/actions/workflows/sea-react-native.yml)
 [![npm](https://img.shields.io/npm/v/%40bankerise-platform%2Fsea-react-native)](https://www.npmjs.com/package/@bankerise-platform/sea-react-native)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Native-feeling login for apps that authenticate against Keycloak (or any
 OIDC provider), without handing the whole login screen off to a system
@@ -171,4 +171,4 @@ rules, and release process. Security issues: see
 
 ## License
 
-[Apache-2.0](LICENSE).
+[MIT](LICENSE).

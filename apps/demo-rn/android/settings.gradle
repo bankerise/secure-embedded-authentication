@@ -1,0 +1,12 @@
+pluginManagement { includeBuild("../../../node_modules/@react-native/gradle-plugin") }
+plugins { id("com.facebook.react.settings") }
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+rootProject.name = 'demo_rn'
+include ':app'
+
+// sea-core-android is resolved from the prebuilt AAR bundled inside
+// sea-react-native's own npm package (see
+// packages/sea-react-native/android/build.gradle.kts) — this app validates
+// the bridge the way an external consumer actually experiences it.
+
+includeBuild('../../../node_modules/@react-native/gradle-plugin')

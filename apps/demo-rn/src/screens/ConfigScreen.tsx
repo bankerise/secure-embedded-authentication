@@ -84,6 +84,15 @@ export function ConfigScreen({
             keyboardType="url"
           />
         </Field>
+        <Field label="App version key">
+          <TextInput
+            style={[styles.input, styles.mono]}
+            value={settings.appVersionKey}
+            onChangeText={(v) => onChangeSettings({ appVersionKey: v })}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </Field>
         <View style={styles.row}>
           <Text style={styles.label}>Use mock gateway</Text>
           <Switch
@@ -106,15 +115,6 @@ export function ConfigScreen({
       </Section>
 
       <Section title="SEAConfig">
-        <Field label="Allowed domains (comma list)">
-          <TextInput
-            style={styles.input}
-            value={settings.allowedDomains}
-            onChangeText={(v) => onChangeSettings({ allowedDomains: v })}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </Field>
         <View style={styles.row}>
           <Text style={styles.label}>Presentation</Text>
           <View style={styles.segmented}>
@@ -132,31 +132,12 @@ export function ConfigScreen({
             ))}
           </View>
         </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>Timeout: {settings.timeoutMs} ms</Text>
-          <View style={styles.stepper}>
-            <Text
-              style={styles.stepperButton}
-              onPress={() =>
-                onChangeSettings({
-                  timeoutMs: Math.max(MIN_TIMEOUT_MS, settings.timeoutMs - TIMEOUT_STEP_MS),
-                })
-              }
-            >
-              −
-            </Text>
-            <Text
-              style={styles.stepperButton}
-              onPress={() =>
-                onChangeSettings({
-                  timeoutMs: Math.min(MAX_TIMEOUT_MS, settings.timeoutMs + TIMEOUT_STEP_MS),
-                })
-              }
-            >
-              +
-            </Text>
-          </View>
-        </View>
+        <Text style={styles.footer}>
+          Callback scheme, allowed domains/ports, max URL length and timeout
+          are not runtime knobs — they are enforced from the native platform
+          config (SEASecurityConfig.plist on iOS, bankerise-sea.properties on
+          Android).
+        </Text>
       </Section>
 
       <Section>
@@ -264,17 +245,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   segmentActive: { backgroundColor: '#007aff', color: 'white' },
-  stepper: { flexDirection: 'row', gap: 12 },
-  stepperButton: {
-    fontSize: 20,
-    width: 32,
-    height: 32,
-    textAlign: 'center',
-    lineHeight: 30,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#c7c7cc',
-    borderRadius: 6,
-  },
   error: { color: '#c0392b', fontSize: 12 },
   hint: { color: '#6d6d72', fontSize: 12 },
   footer: { color: '#8e8e93', fontSize: 11, marginTop: 4 },

@@ -9,6 +9,20 @@
 		<string>auth.bank.local</string>
 		<string>localhost</string>
 		<string>keycloak.example.com</string>
+		<string>platform-keycloak.local.proxym-it.tn</string>
+	</array>
+	<!--
+	Default is https-only. platform-keycloak.local.proxym-it.tn is served
+	over plain http in this dev environment (no TLS-terminating reverse
+	proxy in front of it, unlike infra/'s own local-dev stack). This is a
+	test-harness-only relaxation — see AllowedSchemes doc comment in
+	SEAEnvironment.swift. A real bank's production plist should omit this
+	key entirely.
+	-->
+	<key>AllowedSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
 	</array>
 </dict>
 </plist>
