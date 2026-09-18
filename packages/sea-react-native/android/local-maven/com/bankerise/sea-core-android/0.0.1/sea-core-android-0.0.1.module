@@ -1,0 +1,120 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.bankerise",
+    "module": "sea-core-android",
+    "version": "0.0.1",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.9"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "sea-core-android-0.0.1.aar",
+          "url": "sea-core-android-0.0.1.aar",
+          "size": 122682,
+          "sha512": "e4b0e3ac6f40d1e5eca226f346f960e5ef58b1959d877680ab47d90b1d32e125661c00e548d069817abc787870f0b8ab3ab76c090a47eef4b0b82369fac83435",
+          "sha256": "3a7a70835f39d270675a573ec1f2c231da9865d9858756ff1350b3308eb7b3a8",
+          "sha1": "5d6c85e91ebf814b9449c73a7b075a3c71003308",
+          "md5": "a1b43d20017fdfe5e9bd3a2fff1164ae"
+        }
+      ]
+    },
+    {
+      "name": "releaseRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "dependencies": [
+        {
+          "group": "androidx.core",
+          "module": "core-ktx",
+          "version": {
+            "requires": "1.15.0"
+          }
+        },
+        {
+          "group": "androidx.appcompat",
+          "module": "appcompat",
+          "version": {
+            "requires": "1.7.0"
+          }
+        },
+        {
+          "group": "com.google.android.material",
+          "module": "material",
+          "version": {
+            "requires": "1.12.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "sea-core-android-0.0.1.aar",
+          "url": "sea-core-android-0.0.1.aar",
+          "size": 122682,
+          "sha512": "e4b0e3ac6f40d1e5eca226f346f960e5ef58b1959d877680ab47d90b1d32e125661c00e548d069817abc787870f0b8ab3ab76c090a47eef4b0b82369fac83435",
+          "sha256": "3a7a70835f39d270675a573ec1f2c231da9865d9858756ff1350b3308eb7b3a8",
+          "sha1": "5d6c85e91ebf814b9449c73a7b075a3c71003308",
+          "md5": "a1b43d20017fdfe5e9bd3a2fff1164ae"
+        }
+      ]
+    },
+    {
+      "name": "releaseSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "android",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
+      },
+      "files": [
+        {
+          "name": "sea-core-android-0.0.1-sources.jar",
+          "url": "sea-core-android-0.0.1-sources.jar",
+          "size": 83971,
+          "sha512": "2c453da08a6d2ddf95b58c76561e8767d2e08f7511f54d92c96b4849a2a116c711a1cc5efc3fe16c04070aa52873d281ce5edb35ef33a23b5706809078d4cfb4",
+          "sha256": "ed5184b95a01c272f12c62b07f5b69fc50f7a6a9c6c573855045d0b3ac8cf47f",
+          "sha1": "b87de585afbd1194001dcbbbfa80910ba594815a",
+          "md5": "e7126ff1eb2325a3014b6debc071fe5b"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sea_loading">جارٍ التحميل…</string>
+    <string name="sea_action_retry">إعادة المحاولة</string>
+    <string name="sea_action_close">إغلاق</string>
+    <string name="sea_capture_warning">تم اكتشاف تسجيل للشاشة. لحمايتك، يتم إخفاء هذا المحتوى أثناء التسجيل.</string>
+    <string name="sea_error_network_title">مشكلة في الاتصال</string>
+    <string name="sea_error_network_message">تعذر الوصول إلى صفحة تسجيل الدخول. يرجى التحقق من اتصالك والمحاولة مرة أخرى.</string>
+    <string name="sea_error_timeout_title">استغرقت العملية وقتًا طويلاً</string>
+    <string name="sea_error_timeout_message">انتهت مهلة محاولة تسجيل الدخول. يرجى المحاولة مرة أخرى.</string>
+    <string name="sea_error_server_title">الخدمة غير متاحة</string>
+    <string name="sea_error_server_message">خدمة تسجيل الدخول غير متاحة مؤقتًا حاليًا. يرجى المحاولة مرة أخرى بعد قليل.</string>
+    <string name="sea_error_generic_title">حدث خطأ ما</string>
+    <string name="sea_error_generic_message">تعذر إكمال تسجيل الدخول. يرجى المحاولة مرة أخرى.</string>
+</resources>

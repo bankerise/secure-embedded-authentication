@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sea_loading">Loading…</string>
+    <string name="sea_action_retry">Retry</string>
+    <string name="sea_action_close">Close</string>
+    <string name="sea_capture_warning">Screen recording detected. For your security, this content is hidden while recording is active.</string>
+    <string name="sea_error_network_title">Connection Problem</string>
+    <string name="sea_error_network_message">We couldn\'t reach the login page. Please check your connection and try again.</string>
+    <string name="sea_error_timeout_title">This Is Taking Too Long</string>
+    <string name="sea_error_timeout_message">The login attempt timed out. Please try again.</string>
+    <string name="sea_error_server_title">Service Unavailable</string>
+    <string name="sea_error_server_message">The login service is temporarily unavailable. Please try again shortly.</string>
+    <string name="sea_error_generic_title">Something Went Wrong</string>
+    <string name="sea_error_generic_message">We couldn\'t complete the login. Please try again.</string>
+</resources>

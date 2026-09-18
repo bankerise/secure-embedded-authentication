@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sea_loading">Chargement…</string>
+    <string name="sea_action_retry">Réessayer</string>
+    <string name="sea_action_close">Fermer</string>
+    <string name="sea_capture_warning">Enregistrement d\'écran détecté. Pour votre sécurité, ce contenu est masqué pendant l\'enregistrement.</string>
+    <string name="sea_error_network_title">Problème de connexion</string>
+    <string name="sea_error_network_message">Impossible d\'accéder à la page de connexion. Veuillez vérifier votre connexion et réessayer.</string>
+    <string name="sea_error_timeout_title">Cela prend trop de temps</string>
+    <string name="sea_error_timeout_message">La tentative de connexion a expiré. Veuillez réessayer.</string>
+    <string name="sea_error_server_title">Service indisponible</string>
+    <string name="sea_error_server_message">Le service de connexion est temporairement indisponible. Veuillez réessayer sous peu.</string>
+    <string name="sea_error_generic_title">Un problème est survenu</string>
+    <string name="sea_error_generic_message">La connexion n\'a pas pu aboutir. Veuillez réessayer.</string>
+</resources>

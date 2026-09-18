@@ -32,6 +32,36 @@ final class SEAEnvironmentLoadingTests: XCTestCase {
         XCTAssertEqual(env.authDomains, ["keycloak.example.com"])
     }
 
+    func test_fixtureWithoutAllowedSchemesKey_defaultsToHttpsOnly() {
+        // The bundled fixture predates AllowedSchemes entirely — every
+        // existing host-app plist must keep enforcing https-only exactly as
+        // before this key was introduced.
+        let env = SEAEnvironment.load(from: .module)
+        XCTAssertEqual(env.allowedSchemes, ["https"])
+    }
+
+    func test_plistWithAllowedSchemes_parsesIntoExpectedSet() {
+        silenceLoadFailureReporting()
+        let bundle = makeTempBundle(plistContents: [
+            "CallbackScheme": "bkrmob",
+            "AuthDomains": ["auth.bank.com"],
+            "AllowedSchemes": ["https", "http"],
+        ])
+        let env = SEAEnvironment.load(from: bundle)
+        XCTAssertEqual(env.allowedSchemes, ["https", "http"])
+    }
+
+    func test_plistWithEmptyAllowedSchemesArray_fallsBackToHttpsDefault() {
+        silenceLoadFailureReporting()
+        let bundle = makeTempBundle(plistContents: [
+            "CallbackScheme": "bkrmob",
+            "AuthDomains": ["auth.bank.com"],
+            "AllowedSchemes": [],
+        ])
+        let env = SEAEnvironment.load(from: bundle)
+        XCTAssertEqual(env.allowedSchemes, ["https"])
+    }
+
     // MARK: - Table-driven: every fail-closed path
 
     private struct Case {

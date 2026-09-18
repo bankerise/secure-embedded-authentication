@@ -12,9 +12,19 @@ public struct SEAEnvironment {
     public let authDomains: Set<String>
     public let callbackScheme: String
 
-    public init(authDomains: Set<String>, callbackScheme: String) {
+    /// URI schemes `SEAAuthorizeURLValidator` accepts for the authorize URL
+    /// (contract §5, spec §6.2). Default `["https"]`. Host apps may add
+    /// `"http"` for local dev where TLS is terminated at a reverse proxy in
+    /// front of the auth domain (never in production) — mirrors
+    /// `SEAConfig.allowedSchemes` in `sea-core-android`. Like `authDomains`
+    /// and `callbackScheme`, this is native-platform-config-only: it is not
+    /// reachable from JS/React Native props.
+    public let allowedSchemes: Set<String>
+
+    public init(authDomains: Set<String>, callbackScheme: String, allowedSchemes: Set<String> = ["https"]) {
         self.authDomains = Set(authDomains.map(SEAEnvironment.normalizeHost))
         self.callbackScheme = callbackScheme
+        self.allowedSchemes = allowedSchemes.isEmpty ? ["https"] : Set(allowedSchemes.map { $0.lowercased() })
     }
 
     /// Lowercases (ASCII-lowercased) and strips a single trailing dot, per the
@@ -76,8 +86,8 @@ public struct SEAEnvironment {
     /// integrating developer).
     public static let current: SEAEnvironment = load(from: .main)
 
-    /// Plist schema for `SEASecurityConfig.plist`, matched against the flat
-    /// two-key dictionary the host app bundles:
+    /// Plist schema for `SEASecurityConfig.plist`, matched against the
+    /// dictionary the host app bundles:
     /// ```xml
     /// <key>CallbackScheme</key>
     /// <string>bkrmob</string>
@@ -85,10 +95,21 @@ public struct SEAEnvironment {
     /// <array>
     ///     <string>keycloak.example.com</string>
     /// </array>
+    /// <!-- Optional. Omit entirely to keep the https-only default. -->
+    /// <key>AllowedSchemes</key>
+    /// <array>
+    ///     <string>https</string>
+    /// </array>
     /// ```
     private struct SecurityConfigPlist: Decodable {
         let CallbackScheme: String
         let AuthDomains: [String]
+        /// Optional — absent or empty keeps the `["https"]` default (see
+        /// `SEAEnvironment.init`). Unlike `CallbackScheme`/`AuthDomains`,
+        /// this key's absence is not a fail-closed condition: every existing
+        /// plist that predates this key must keep enforcing https-only
+        /// exactly as before.
+        let AllowedSchemes: [String]?
     }
 
     /// Test seam only: the failure path below reports through this instead
@@ -147,6 +168,10 @@ public struct SEAEnvironment {
             return failClosed
         }
 
-        return SEAEnvironment(authDomains: Set(decoded.AuthDomains), callbackScheme: decoded.CallbackScheme)
+        return SEAEnvironment(
+            authDomains: Set(decoded.AuthDomains),
+            callbackScheme: decoded.CallbackScheme,
+            allowedSchemes: Set(decoded.AllowedSchemes ?? ["https"])
+        )
     }
 }

@@ -1,0 +1,28 @@
+{
+  "name": "SEACore",
+  "version": "0.0.7",
+  "summary": "Bankerise SEA — hardened embedded WebView auth core (iOS).",
+  "homepage": "https://github.com/bankerise/secure-embedded-authentication",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "authors": "Bankerise",
+  "platforms": {
+    "ios": "15.0"
+  },
+  "swift_versions": "5.9",
+  "source": {
+    "git": "https://github.com/bankerise/secure-embedded-authentication.git",
+    "tag": "sea-core-ios/0.0.7"
+  },
+  "source_files": [
+    "Sources/SEACore/**/*.swift",
+    "packages/sea-core-ios/Sources/SEACore/**/*.swift"
+  ],
+  "resources": [
+    "Sources/SEACore/Resources/**/*.lproj",
+    "packages/sea-core-ios/Sources/SEACore/Resources/**/*.lproj"
+  ],
+  "swift_version": "5.9"
+}

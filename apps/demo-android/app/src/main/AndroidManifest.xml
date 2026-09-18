@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name=".SEADemoApplication"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/backup_rules"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SEADemo">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SEADemo">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+         §6.3: the callback redirect URI is a custom scheme, registered here
+         so iOS routes it back to this app if the WebView ever let it escape
+         to the OS (it shouldn't — SEACore intercepts in-process before
+         dispatch). Registration here is defense-in-depth, not the primary
+         capture mechanism.
+        -->
+        <activity
+            android:name="com.bankerise.sea.core.SEAAuthActivity"
+            android:exported="true"
+            android:theme="@style/SEA.AuthSheetTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="bankerise-auth"
+                    android:host="callback" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

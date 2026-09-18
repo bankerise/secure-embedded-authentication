@@ -155,6 +155,67 @@ final class SEAAuthorizeURLValidatorTests: XCTestCase {
         }
     }
 
+    // MARK: - AllowedSchemes (contract §5, spec §6.2)
+
+    func test_httpRejectedByDefault_evenWithHostAllowlisted() {
+        // `env` above uses the default allowedSchemes (unspecified -> {"https"}).
+        XCTAssertEqual(validate("http://auth.bank.com/auth").failureReason, .scheme)
+    }
+
+    func test_httpAccepted_whenEnvironmentExplicitlyAllowsIt() {
+        let devEnv = SEAEnvironment(
+            authDomains: ["auth.bank.com"],
+            callbackScheme: "bankerise-auth",
+            allowedSchemes: ["https", "http"]
+        )
+        let url = URL(string: "http://auth.bank.com/auth")!
+        let result = SEAAuthorizeURLValidator.validate(url, against: devEnv, narrowedBy: [])
+        switch result {
+        case .success: break
+        case .failure(let reason): XCTFail("expected success, got \(reason)")
+        }
+    }
+
+    func test_httpsStillAccepted_whenEnvironmentAllowsBothSchemes() {
+        let devEnv = SEAEnvironment(
+            authDomains: ["auth.bank.com"],
+            callbackScheme: "bankerise-auth",
+            allowedSchemes: ["https", "http"]
+        )
+        let url = URL(string: "https://auth.bank.com/auth")!
+        let result = SEAAuthorizeURLValidator.validate(url, against: devEnv, narrowedBy: [])
+        switch result {
+        case .success: break
+        case .failure(let reason): XCTFail("expected success, got \(reason)")
+        }
+    }
+
+    func test_schemeOtherThanExplicitAllowlist_stillRejected() {
+        // Allowing "http" must not become "allow anything" — javascript: etc.
+        // are still rejected even when the environment has widened past the
+        // https-only default.
+        let devEnv = SEAEnvironment(
+            authDomains: ["auth.bank.com"],
+            callbackScheme: "bankerise-auth",
+            allowedSchemes: ["https", "http"]
+        )
+        let url = URL(string: "javascript:alert(1)")!
+        let result = SEAAuthorizeURLValidator.validate(url, against: devEnv, narrowedBy: [])
+        XCTAssertEqual(result.failureReason, .scheme)
+    }
+
+    func test_emptyAllowedSchemes_fallsBackToHttpsDefault() {
+        // SEAEnvironment.init treats an empty allowedSchemes set as "unset",
+        // not "allow nothing" — mirrors the same fail-safe-to-default
+        // behavior as sea-core-android's SEAPropertiesLoader.
+        let envWithEmptySchemes = SEAEnvironment(
+            authDomains: ["auth.bank.com"],
+            callbackScheme: "bankerise-auth",
+            allowedSchemes: []
+        )
+        XCTAssertEqual(envWithEmptySchemes.allowedSchemes, ["https"])
+    }
+
     // MARK: - Helpers
 
     private func assertSucceeds(_ urlString: String, file: StaticString = #filePath, line: UInt = #line) {

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Shared easing curve for every sheet motion — open/close window
+    transition (sea_slide_up.xml / sea_slide_down.xml) and the
+    drag-dismiss/snap-back animations in SEAAuthDelegate's
+    SHEET_MOTION_INTERPOLATOR. A standard ease-in-out cubic, close to both
+    Material's standard curve and iOS's default sheet-presentation easing,
+    so open, close, and drag motions all read as one consistent system.
+-->
+<pathInterpolator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:controlX1="0.4"
+    android:controlY1="0.0"
+    android:controlX2="0.2"
+    android:controlY2="1.0" />

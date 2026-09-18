@@ -1,7 +1,6 @@
 import type { ViewProps, ColorValue } from 'react-native';
 import type {
   DirectEventHandler,
-  Int32,
   Double,
   WithDefault,
 } from 'react-native/Libraries/Types/CodegenTypesNamespace';
@@ -55,12 +54,6 @@ export interface NativeProps extends ViewProps {
   authMode?: WithDefault<'embedded' | 'nativeBrowser', 'embedded'>;
 
   appearance?: NativeAppearance;
-
-  // Host-supplied narrowing allowlist (spec §7.1/§7.3) — intersected with
-  // the native-compiled allowlist, never widens it.
-  allowedDomains?: ReadonlyArray<string>;
-
-  timeoutMs?: Int32;
 
   onCaptured?: DirectEventHandler<CapturedNativeEvent>;
   onCancelled?: DirectEventHandler<CancelledNativeEvent>;

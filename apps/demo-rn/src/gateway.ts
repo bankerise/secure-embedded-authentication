@@ -1,5 +1,7 @@
 import { currentDeviceId } from './deviceIdentity';
 
+const clientId = 'front'
+
 /**
  * Result of the §6.1 two-hop start sequence: the final Keycloak authorize
  * URL SEACore will validate and load, plus the mode/provider the gateway
@@ -13,10 +15,8 @@ export type GatewayStartResult = Readonly<{
 
 export class GatewayError extends Error {}
 
-// DEMO/TEST-ONLY value for this specific showcase environment — not a real
-// secret, just an app-identity header the showcase gateway expects (mirrors
-// GatewayClient.swift's demoAppVersionKey).
-const DEMO_APP_VERSION_KEY = '4ZvAEYVC2Xk3';
+// Default value — overridable via Settings.appVersionKey in the demo harness.
+const DEFAULT_APP_VERSION_KEY = '4ZvAEYVC2Xk3';
 
 type StartResponse = { redirect: string; authMode?: string; provider: string };
 type RedirectResponse = { redirectUrl: string; provider: string };
@@ -30,7 +30,66 @@ async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
   try {
     return JSON.parse(body) as T;
   } catch (error) {
-    throw new GatewayError(`Failed to decode gateway response: ${String(error)}`);
+    throw new GatewayError(
+      `Failed to decode gateway response: ${String(error)}`,
+    );
+  }
+}
+
+export async function getCurrentUser(
+  gatewayBaseURL: string,
+  appVersionKey: string = DEFAULT_APP_VERSION_KEY,
+) {
+  const base = gatewayBaseURL.replace(/\/+$/, '');
+  try {
+    const result = await getJSON<StartResponse>(`${base}/secured/users/me`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US',
+        'X-App-Version-Key': appVersionKey,
+        'X-Device-ID': currentDeviceId(),
+      },
+    });
+    console.log('result ', result);
+  } catch (error) {
+    console.log('Exception ', error);
+    if (error instanceof GatewayError) throw error;
+    throw new GatewayError(
+      `Invalid gateway base URL or network error: ${String(error)}`,
+    );
+  }
+}
+
+
+export async function getOauthLogin(
+  gatewayBaseURL: string,
+  appVersionKey: string = DEFAULT_APP_VERSION_KEY,
+  code: string,
+  iss: string,
+  session_state: string,
+  state: string
+) {
+  const base = gatewayBaseURL.replace(/\/+$/, '');
+  try {
+    const result = await getJSON<StartResponse>(`${base}/login/oauth2/code/${clientId}?state=${state}&session_state=${session_state}&iss=${iss}&code=${code}`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US',
+        'X-App-Version-Key': appVersionKey,
+        'X-Device-ID': currentDeviceId(),
+      },
+    });
+    console.log('getOauthLogin result ', result);
+
+    // getCurrentUser(gatewayBaseURL, appVersionKey);
+  } catch (error) {
+    console.log('Exception ', error);
+    if (error instanceof GatewayError) throw error;
+    throw new GatewayError(
+      `Invalid gateway base URL or network error: ${String(error)}`,
+    );
   }
 }
 
@@ -41,7 +100,8 @@ async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
  * WKWebsiteDataStore in the first place (§6.5 is inherently satisfied).
  */
 export async function startAuthorization(
-  gatewayBaseURL: string
+  gatewayBaseURL: string,
+  appVersionKey: string = DEFAULT_APP_VERSION_KEY,
 ): Promise<GatewayStartResult> {
   const base = gatewayBaseURL.replace(/\/+$/, '');
 
@@ -52,17 +112,24 @@ export async function startAuthorization(
       headers: {
         Accept: 'application/json, text/plain, */*',
         'Accept-Language': 'en-US',
-        'X-App-Version-Key': DEMO_APP_VERSION_KEY,
+        'X-App-Version-Key': appVersionKey,
         'X-Device-ID': currentDeviceId(),
       },
     });
   } catch (error) {
     if (error instanceof GatewayError) throw error;
-    throw new GatewayError(`Invalid gateway base URL or network error: ${String(error)}`);
+    throw new GatewayError(
+      `Invalid gateway base URL or network error: ${String(error)}`,
+    );
   }
 
   const redirectUrl = new URL(start.redirect, `${base}/`).toString();
-  const redirect = await getJSON<RedirectResponse>(redirectUrl, { method: 'GET' });
+  console.log('redirectUrl ', redirectUrl);
+
+  const redirect = await getJSON<RedirectResponse>(redirectUrl, {
+    method: 'GET',
+  });
+  console.log('redirect ', redirect);
 
   return {
     authorizeUrl: redirect.redirectUrl,

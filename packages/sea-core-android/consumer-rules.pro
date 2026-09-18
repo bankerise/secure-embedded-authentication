@@ -1,0 +1,12 @@
+# Keep the public API surface for R8 consumers.
+-keep public class com.bankerise.sea.core.SEASession { *; }
+-keep public class com.bankerise.sea.core.SEAConfig { *; }
+-keep public class com.bankerise.sea.core.SEAAppearance { *; }
+-keep public class com.bankerise.sea.core.SEAError { *; }
+-keep public class com.bankerise.sea.core.SEAError$* { *; }
+-keep public class com.bankerise.sea.core.InvalidUrlReason { *; }
+-keep public class com.bankerise.sea.core.SEACallbackParams { *; }
+-keep public class com.bankerise.sea.core.SEAEvent { *; }
+-keep public class com.bankerise.sea.core.SEATelemetrySink { *; }
+-keep public class com.bankerise.sea.core.SEAPresentation { *; }
+-keep public class com.bankerise.sea.core.SEACapturePolicy { *; }

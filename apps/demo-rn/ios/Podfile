@@ -22,8 +22,11 @@ target 'demo_rn' do
 
   # sea-react-native is autolinked via the workspace dependency in
   # package.json; its podspec declares `s.dependency "SEACore"`, satisfied
-  # here by the versioned pod resolved from the Specs/ index in this same repo.
-  pod 'SEACore', '~> 0.0.1'
+  # here by a local `:path` reference to the in-repo package (AGENTS.md:
+  # "CocoaPods `:path` for local dev") so the bridge always builds against
+  # the current SEACore source instead of whatever was last tagged/published
+  # to the Specs/ index.
+  pod 'SEACore', :path => '../../../packages/sea-core-ios'
 
   use_react_native!(
     :path => config[:reactNativePath],

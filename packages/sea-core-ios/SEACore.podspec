@@ -2,10 +2,10 @@ require 'json'
 
 Pod::Spec.new do |s|
   s.name         = 'SEACore'
-  s.version      = '0.0.1'
+  s.version      = '0.0.9'
   s.summary      = 'Bankerise SEA — hardened embedded WebView auth core (iOS).'
   s.homepage     = 'https://github.com/bankerise/secure-embedded-authentication'
-  s.license      = { :type => 'Apache-2.0', :file => 'LICENSE' }
+  s.license      = { :type => 'MIT', :file => 'LICENSE' }
   s.author       = 'Bankerise'
   s.platform     = :ios, '15.0'
   s.swift_version = '5.9'
@@ -14,8 +14,21 @@ Pod::Spec.new do |s|
     :tag => "sea-core-ios/#{s.version}"
   }
 
-  # s.source checks out the whole monorepo at the given tag, so paths below
-  # are repo-root-relative rather than package-relative.
-  s.source_files = 'packages/sea-core-ios/Sources/SEACore/**/*.swift'
-  s.resources    = 'packages/sea-core-ios/Sources/SEACore/Resources/**/*.lproj'
+  # Consumed two ways (AGENTS.md): the git/tag source above, which checks
+  # out the whole monorepo (pod root == repo root, so paths need to be
+  # repo-root-relative), or a local `:path => 'packages/sea-core-ios'` for
+  # dev (pod root == this directory, so paths are package-relative).
+  #
+  # A `File.directory?(__dir__ + 'Sources')` runtime check can't tell these
+  # apart reliably: `__dir__` reflects wherever the podspec *file* physically
+  # sits when Ruby evaluates it, which — for `pod spec lint <local path>` —
+  # is this package directory (Sources/ sits right next to it) even though
+  # the linter then validates source_files against the git+tag source, which
+  # checks out the whole monorepo (repo-root-relative). That mismatch made
+  # `pod spec lint` fail with "pattern did not match any file" despite both
+  # real consumption paths working. Listing both candidate patterns sidesteps
+  # detection entirely — whichever one doesn't match the actual pod root
+  # simply contributes no files.
+  s.source_files = ['Sources/SEACore/**/*.swift', 'packages/sea-core-ios/Sources/SEACore/**/*.swift']
+  s.resources    = ['Sources/SEACore/Resources/**/*.lproj', 'packages/sea-core-ios/Sources/SEACore/Resources/**/*.lproj']
 end

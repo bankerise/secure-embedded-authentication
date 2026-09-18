@@ -15,8 +15,11 @@ import {
   subscribeToTelemetry,
 } from '@bankerise-platform/sea-react-native';
 import { startAuthorization as startMockAuthorization } from './src/mockGateway';
-import { startAuthorization as startRealAuthorization } from './src/gateway';
-import { allowedDomainsArray, DEFAULT_SETTINGS, type Settings } from './src/settings';
+import {
+  getOauthLogin,
+  startAuthorization as startRealAuthorization,
+} from './src/gateway';
+import { DEFAULT_SETTINGS, type Settings } from './src/settings';
 import type { Result } from './src/types';
 import { useSessionLogout } from './src/useSessionLogout';
 import { ConfigScreen } from './src/screens/ConfigScreen';
@@ -50,7 +53,7 @@ function App(): React.JSX.Element {
   }, []);
 
   const onChangeSettings = useCallback((patch: Partial<Settings>) => {
-    setSettings((prev) => ({ ...prev, ...patch }));
+    setSettings(prev => ({ ...prev, ...patch }));
   }, []);
 
   const startLogin = useCallback(async () => {
@@ -60,18 +63,27 @@ function App(): React.JSX.Element {
     try {
       const start = settings.useMockGateway
         ? await startMockAuthorization(settings.mockRedirectURL)
-        : await startRealAuthorization(settings.gatewayBaseURL);
+        : await startRealAuthorization(
+            settings.gatewayBaseURL,
+            settings.appVersionKey,
+          );
+
       setAuthorizeUrl(start.authorizeUrl);
       // Remember what Logout needs from this session (authorize URL + mock flag).
       session.beginSession(start.authorizeUrl, settings.useMockGateway);
     } catch (error) {
+      console.log('error ', error);
+
       setLastStartError(error instanceof Error ? error.message : String(error));
     } finally {
       setIsRunning(false);
     }
   }, [isRunning, settings, session]);
 
-  const dismiss = useCallback(() => setAuthorizeUrl(null), []);
+  const dismiss = useCallback(() => {
+    console.log('dismiss');
+    setAuthorizeUrl(null);
+  }, []);
 
   const onPurgeWebData = useCallback(() => {
     setPurgeMessage('Purging…');
@@ -85,6 +97,7 @@ function App(): React.JSX.Element {
       {activeTab === 'config' && (
         <ConfigScreen
           settings={settings}
+
           onChangeSettings={onChangeSettings}
           isRunning={isRunning}
           lastStartError={lastStartError}
@@ -100,7 +113,10 @@ function App(): React.JSX.Element {
         />
       )}
       {activeTab === 'result' && (
-        <ResultScreen result={result} onClear={() => setResult({ kind: 'idle' })} />
+        <ResultScreen
+          result={result}
+          onClear={() => setResult({ kind: 'idle' })}
+        />
       )}
       {activeTab === 'telemetry' && (
         <TelemetryScreen entries={telemetryEntries} onClear={() => setTelemetryEntries([])} />
@@ -111,21 +127,39 @@ function App(): React.JSX.Element {
       {authorizeUrl !== null && (
         <SecureAuthenticationView
           authorizeUrl={authorizeUrl}
+
           presentation={settings.presentation}
           authMode={settings.authMode}
-          allowedDomains={allowedDomainsArray(settings)}
-          timeoutMs={settings.timeoutMs}
-          onCaptured={(params) => {
+          onCaptured={params => {
+            console.log('onCaptured ', params);
+
             setResult({ kind: 'captured', params, at: Date.now() });
             // Mock path only: exchange the code so Logout has an id_token_hint.
             session.handleCaptured(params);
             dismiss();
+
+            if (params?.code) {
+              getOauthLogin(
+                settings.gatewayBaseURL,
+                settings.appVersionKey,
+                params.code,
+                params.iss,
+                params.session_state,
+                params.state,
+              );
+            }
+            else{
+              console.log('params is null');
+
+            }
           }}
           onCancelled={() => {
+            console.log('onCancelled ');
             setResult({ kind: 'cancelled', at: Date.now() });
             dismiss();
           }}
-          onError={(error) => {
+          onError={error => {
+            console.log('onError ', error);
             setResult({ kind: 'error', error, at: Date.now() });
             dismiss();
           }}

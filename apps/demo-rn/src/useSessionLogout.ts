@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { exchangeCodeForTokens, gatewayLogout, keycloakLogout } from './logout';
+import { exchangeCodeForTokens, gatewayLogout, keycloakLogout, keycloakSessionLogout } from './logout';
 import { MOCK_CODE_VERIFIER } from './mockGateway';
 import type { Settings } from './settings';
 
@@ -68,6 +68,9 @@ export function useSessionLogout(settings: Settings): SessionLogout {
   }, []);
 
   const logout = useCallback(() => {
+
+    console.log('logout ', isLoggingOut);
+    
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     setLogoutMessage(null);
@@ -89,6 +92,8 @@ export function useSessionLogout(settings: Settings): SessionLogout {
           setTokenStatus(null);
         } else {
           const url = await gatewayLogout(settings.gatewayBaseURL);
+          await keycloakSessionLogout(url);
+          
           setGatewayLogoutURL(url);
           setLogoutMessage(
             `Received logout URL ${nowTime()} — call it separately to complete logout.`

@@ -10,7 +10,16 @@
 #import <react/renderer/components/SeaReactNativeViewSpec/RCTComponentViewHelpers.h>
 
 #import "RCTFabricComponentsPlugins.h"
+
+// Quoted form resolves under a plain static-lib pod build; under
+// `use_frameworks!` the generated Swift interface header only lands in the
+// framework's own Headers/ dir, reachable solely via the module-qualified
+// angle-bracket form.
+#if __has_include("SeaReactNative-Swift.h")
 #import "SeaReactNative-Swift.h"
+#else
+#import <SeaReactNative/SeaReactNative-Swift.h>
+#endif
 
 using namespace facebook::react;
 
@@ -78,11 +87,6 @@ using namespace facebook::react;
   NSString *authMode =
       viewProps.authMode == SeaReactNativeViewAuthMode::NativeBrowser ? @"nativeBrowser" : @"embedded";
 
-  NSMutableArray<NSString *> *allowedDomains = [NSMutableArray new];
-  for (const auto &domain : viewProps.allowedDomains) {
-    [allowedDomains addObject:RCTNSStringFromString(domain)];
-  }
-
   const auto &appearance = viewProps.appearance;
   UIColor *headerBackground = RCTUIColorFromSharedColor(appearance.headerBackground);
   UIColor *headerText = RCTUIColorFromSharedColor(appearance.headerText);
@@ -109,8 +113,6 @@ using namespace facebook::react;
                                                      authorizeUrl:authorizeUrl
                                                      presentation:presentation
                                                          authMode:authMode
-                                                   allowedDomains:allowedDomains
-                                                        timeoutMs:viewProps.timeoutMs
                                                  headerBackground:headerBackground
                                                        headerText:headerText
                                                            accent:accent
@@ -166,3 +168,24 @@ using namespace facebook::react;
 }
 
 @end
+
+// Autolinking's third-party Fabric component discovery (react-native/scripts/
+// codegen/generate-artifacts-executor.js) doesn't read codegenConfig for
+// this — it regex-scans every .mm file in the library for a function of
+// this exact shape (component name, then the literal suffix "Cls", then an
+// open paren) and only then registers that name in the generated
+// RCTThirdPartyComponentsProvider.mm lookup table RN uses at runtime to
+// instantiate the native view by name. Without it, SecureAuthenticationView
+// silently renders nothing — no crash, no RCTLog, nothing — because there
+// is no registered class to instantiate.
+//
+// IMPORTANT: that scan is a naive single-line regex, not a real parser — it
+// takes the first line anywhere in this file matching the shape above,
+// comments included. Never describe the pattern itself in a comment here;
+// say what it does instead.
+#ifdef RCT_NEW_ARCH_ENABLED
+Class<RCTComponentViewProtocol> SeaReactNativeViewCls(void)
+{
+  return SeaReactNativeView.class;
+}
+#endif

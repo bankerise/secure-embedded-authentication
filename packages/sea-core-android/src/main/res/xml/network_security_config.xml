@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    §9.2, §15: cleartext disabled globally. Pin sets to be added per deployment
+    (§15 — CA-level SPKI pins with expiry, not leaf pins).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!--
+        DEV ONLY: trust the mkcert local CA in debug builds so the local
+        Keycloak TLS proxy works on the emulator without manual CA install.
+        Structurally unable to escape a release build — debug-overrides is
+        excluded from release APKs by the build system.
+    -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>
