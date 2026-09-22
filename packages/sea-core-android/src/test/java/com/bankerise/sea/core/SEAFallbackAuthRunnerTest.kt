@@ -6,8 +6,12 @@ import android.net.Uri
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mockito.*
+import org.robolectric.RobolectricTestRunner
 
+// Robolectric supplies a real android.net.Uri (the android.jar stub returns null).
+@RunWith(RobolectricTestRunner::class)
 class SEAFallbackAuthRunnerTest {
 
     private lateinit var activity: Activity

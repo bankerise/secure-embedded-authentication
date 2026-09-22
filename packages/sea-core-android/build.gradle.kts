@@ -55,6 +55,8 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        // Robolectric needs merged resources for tests that touch android.*
+        unitTests.isIncludeAndroidResources = true
     }
 }
 
@@ -65,6 +67,8 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.0.21")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("org.mockito:mockito-core:5.14.2")
 }
 
 // Distribution: published to Maven Central (Central Portal, namespace
