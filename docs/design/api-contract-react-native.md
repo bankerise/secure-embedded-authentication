@@ -1,7 +1,7 @@
 # SEA React Native — API Contract v1
 
 Normative technical specification for `sea-react-native` (npm package
-`@bankerise-platform/sea-react-native`), the Fabric bridge wrapping
+`@bankerise/sea-react-native`), the Fabric bridge wrapping
 `sea-core-ios` and `sea-core-android`. `demo-rn` builds against exactly this
 surface. Any deviation is a contract break.
 
@@ -12,7 +12,7 @@ and publish pipeline.
 
 **Explicitly out of scope:** `sea-core-ios`/`sea-core-android`'s own
 internal security logic (URL validation, navigation policy, screen
-security) — see `docs/api-contract-ios-v1.md` and each core package's own
+security) — see `docs/design/api-contract-ios.md` and each core package's own
 source for that. This document covers only the bridge layer: what crosses
 from JS into native, and what the bridge itself does with it.
 
@@ -20,7 +20,7 @@ from JS into native, and what the bridge itself does with it.
 
 ## 1. Module
 
-npm package `@bankerise-platform/sea-react-native`, version `0.1.0` at time
+npm package `@bankerise/sea-react-native`, version `0.1.0` at time
 of writing. React Native Fabric (new-architecture) component + one native
 module (telemetry). Built with `react-native-builder-bob`
 (`yarn prepare` → `bob build`) into `lib/module` (ESM) and
@@ -184,16 +184,20 @@ would be, without requiring either core to be recompiled per integrating
 app. Any problem loading or parsing either file fails closed (empty
 allowlist, empty callback scheme — every check then fails).
 
-### 4.1 `AllowedSchemes` (both platforms)
+### 4.1 `AllowedSchemes` and `AllowedPorts` (both platforms)
 
-Both config files support an optional `allowedSchemes`/`AllowedSchemes`
-key (Android: comma-separated string, default `https`; iOS: plist string
-array, default `["https"]`). Absent or empty on either platform falls
-back to https-only. This exists specifically for local dev where a domain
-is served over plain `http://` behind no TLS-terminating proxy — **never**
-set for a production domain. iOS's validator previously had no override
-mechanism at all here (hardcoded `scheme == "https"`); Android's `SEAConfig`
-already supported `allowedSchemes` before iOS gained parity.
+Both config files support optional scheme and port overrides:
+
+| | iOS plist | Android properties | Default |
+|---|---|---|---|
+| Schemes | `AllowedSchemes` (string array) | `allowedSchemes` (comma-separated) | `https` |
+| Ports | `AllowedPorts` (integer array) | `allowedPorts` (comma-separated, `-1` = no explicit port) | `443` (plus no explicit port) |
+
+Absent or empty keys fall back to the defaults. The allowed schemes apply to
+both the authorize-URL validator and the navigation policy; the allowed
+ports apply to the authorize-URL validator. This exists specifically for
+local dev where a domain is served over plain `http://` or on a
+non-standard port — **never** set for a production domain.
 
 ### 4.2 Android cleartext traffic (separate, OS-level control)
 
@@ -382,7 +386,7 @@ triggered on `sea-react-native/*.*.*` tags — part of this monorepo's
 lockstep versioning (all three `sea-*` packages tagged and released
 together; independent version drift is prohibited). The workflow syncs
 the tag's version into `package.json`, builds, then publishes to the npm
-registry as `@bankerise-platform/sea-react-native` (public access).
+registry as `@bankerise/sea-react-native` (public access).
 Toolchain: Yarn Classic 1.22.22 (pinned via Corepack) — this repo does not
 use Yarn Berry.
 

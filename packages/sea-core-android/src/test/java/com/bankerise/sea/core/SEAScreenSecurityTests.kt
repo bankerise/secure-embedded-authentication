@@ -9,9 +9,9 @@ class SEAScreenSecurityTests {
     fun `not captured never produces overlay regardless of policy`() {
         for (policy in SEACapturePolicy.entries) {
             assertEquals(
+                "policy=$policy",
                 SEACaptureAction.None,
-                SEAScreenSecurity.evaluateAction(isCaptured = false, policy = policy),
-                "policy=$policy"
+                SEAScreenSecurity.evaluateAction(isCaptured = false, policy = policy)
             )
         }
     }

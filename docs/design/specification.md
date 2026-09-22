@@ -329,7 +329,7 @@ Division of labor: steps outside the WebView column are the Bankerise Mobile SDK
 
 ### 6.2 Authorize URL integrity and parameter gating
 
-**URL integrity (SEA-enforced).** The start sequence returns the Keycloak authorize URL (`redirectUrl`, §6.1) in a JSON body rather than a 302. Because this URL arrives as data, SEA validates it before first load: scheme must be `https`; host must be in the **compiled** auth-domain allowlist (JS-supplied `allowedDomains` can narrow, never widen, §7.1); no userinfo component, no non-standard port, total length ≤ 2 KB. Any violation → `AUTH_FAILED(invalid_authorize_url)`, nothing is loaded.
+**URL integrity (SEA-enforced).** The start sequence returns the Keycloak authorize URL (`redirectUrl`, §6.1) in a JSON body rather than a 302. Because this URL arrives as data, SEA validates it before first load: scheme must be `https`; host must be in the **compiled** auth-domain allowlist (JS-supplied `allowedDomains` can narrow, never widen, §7.1); no userinfo component, no non-standard port, total length ≤ 2 KB. For local development only, the host app's bundled native config may additionally allow `http` and specific ports (`AllowedSchemes`/`AllowedPorts` on iOS, `allowedSchemes`/`allowedPorts` on Android); these are never reachable from JS and must not be set in production builds. Any violation → `AUTH_FAILED(invalid_authorize_url)`, nothing is loaded.
 
 **Parameter gating (gateway-enforced).** All parameters that shape the authorization request enter at `/authorization/start` and pass through the gateway's customized `OAuth2AuthorizationRequestResolver` in three tiers:
 
@@ -413,7 +413,7 @@ Lifecycle management (mount → pre-warm → present → dismiss), navigation fi
 
 ### 7.3 Navigation policy (normative)
 
-- Deny by default. A navigation is permitted iff: scheme is `https` **and** host ∈ allowlist **and** it is a main-frame or same-origin subresource load.
+- Deny by default. A navigation is permitted iff: scheme is `https` (or another scheme the bundled native config explicitly allows for local development, §6.2) **and** host ∈ allowlist **and** it is a main-frame or same-origin subresource load.
 - The callback-scheme match (§6.3) preempts everything.
 - `target=_blank` / new-window requests: opened in the same WebView if allowlisted, otherwise blocked. Never opened externally from within an auth flow, with the single exception of the broker external-tab escape (§12.4).
 - `http:`, `file:`, `content:`, `intent:`, `javascript:`, and custom schemes other than the registered `callbackScheme`: blocked and reported as `AUTH_NAV_BLOCKED` telemetry.

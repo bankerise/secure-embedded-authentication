@@ -20,7 +20,7 @@ Pod::Spec.new do |s|
   # Dev-mode: the app's Podfile pins this to the local sea-core-ios path
   # (spec §4.5); this dependency just names it so CocoaPods resolves the
   # transitive link.
-  s.dependency "SEACore"
+  s.dependency "SEACore", "~> 0.0.1"
 
   install_modules_dependencies(s)
 end

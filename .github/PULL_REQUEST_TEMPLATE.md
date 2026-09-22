@@ -1,26 +1,14 @@
-## Summary
+## What does this change?
 
-<!-- What does this change, and why? -->
+<!-- A short description, and why it's needed. Link related issues: "Fixes #123". -->
 
-## Package(s) touched
+## How was it tested?
 
-<!-- sea-core-ios / sea-react-native / demo-ios / demo-rn / themes / docs -->
-
-## Spec impact
-
-<!-- Link the section(s) of bankerise_sea_specs-v1.0.md this implements or
-     changes. If normative behavior changed, the spec doc should be updated
-     in this same PR. -->
-
-## Verification
-
-<!-- How did you confirm this works? Simulator run, xcodebuild test,
-     yarn typecheck/lint/test, etc. "It builds" is not sufficient for
-     UI or auth-flow changes. -->
+<!-- Simulator/device run, xcodebuild test, gradlew test, yarn test… -->
 
 ## Checklist
 
-- [ ] `sea-react-native` changes contain no networking/crypto/storage/WebView
-      imports (bridge-purity rule, spec §4.2/§7.4)
-- [ ] Commit messages follow `type(scope): summary`
-- [ ] CHANGELOG.md updated if this is a release-relevant change
+- [ ] Checks pass locally (see CONTRIBUTING.md → Running the checks)
+- [ ] iOS and Android behave the same, or there's an issue tracking the gap
+- [ ] `sea-react-native` changes don't add networking, crypto, storage or WebView code
+- [ ] Docs and CHANGELOG.md updated if users will notice the change

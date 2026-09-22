@@ -5,7 +5,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+// Robolectric supplies a real android.net.Uri (the android.jar stub returns null).
+@RunWith(RobolectricTestRunner::class)
 class SEACallbackParamsTest {
 
     @Test
@@ -58,9 +62,17 @@ class SEACallbackParamsTest {
     }
 
     @Test
+    fun `percent encoded plus stays a literal plus`() {
+        val uri = Uri.parse("seacb://callback?code=a%2Bb&state=x+y")
+        val params = SEACallbackParams.extract(uri)
+        assertEquals("a+b", params.code)
+        assertEquals("x y", params.state)
+    }
+
+    @Test
     fun `all properties accessible`() {
         val uri = Uri.parse(
-            "seacb://callback?code=c&state=s&session_state=ss&e=err&error_description=desc"
+            "seacb://callback?code=c&state=s&session_state=ss&error=err&error_description=desc"
         )
         val params = SEACallbackParams.extract(uri)
         assertEquals("c", params.code)

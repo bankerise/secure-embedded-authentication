@@ -5,7 +5,7 @@ import Foundation
 /// authorize URL) so the WebView / navigation surface can be exercised with
 /// no backend running at all.
 ///
-/// Note this does NOT bypass SEACore's own validation (api-contract-ios-v1.md
+/// Note this does NOT bypass SEACore's own validation (docs/design/api-contract-ios.md
 /// §5) — the URL still has to be https and host-allowlisted, or SEASession
 /// will reject it and fire onError(.invalidAuthorizeURL) exactly as it would
 /// for a real gateway response. That's by design: the mock only removes the

@@ -155,6 +155,35 @@ final class SEAAuthorizeURLValidatorTests: XCTestCase {
         }
     }
 
+    // MARK: - AllowedPorts (contract §5, spec §6.2)
+
+    func test_customPortAccepted_whenEnvironmentExplicitlyAllowsIt() {
+        let devEnv = SEAEnvironment(
+            authDomains: ["localhost"],
+            callbackScheme: "bankerise-auth",
+            allowedSchemes: ["https", "http"],
+            allowedPorts: [443, 8080]
+        )
+        let url = URL(string: "http://localhost:8080/realms/demo/protocol/openid-connect/auth")!
+        switch SEAAuthorizeURLValidator.validate(url, against: devEnv, narrowedBy: []) {
+        case .success: break
+        case .failure(let reason): XCTFail("expected success, got \(reason)")
+        }
+    }
+
+    func test_portOutsideExplicitAllowlist_stillRejected() {
+        let devEnv = SEAEnvironment(
+            authDomains: ["localhost"],
+            callbackScheme: "bankerise-auth",
+            allowedPorts: [443, 8080]
+        )
+        let url = URL(string: "https://localhost:9000/auth")!
+        XCTAssertEqual(
+            SEAAuthorizeURLValidator.validate(url, against: devEnv, narrowedBy: []).failureReason,
+            .port
+        )
+    }
+
     // MARK: - AllowedSchemes (contract §5, spec §6.2)
 
     func test_httpRejectedByDefault_evenWithHostAllowlisted() {

@@ -1926,7 +1926,7 @@ DEPENDENCIES:
   - ReactCommon/turbomodule/core (from `../../../node_modules/react-native/ReactCommon`)
   - ReactNativeDependencies (from `../../../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
   - SEACore (from `../../../packages/sea-core-ios`)
-  - "SeaReactNative (from `../../../node_modules/@bankerise-platform/sea-react-native`)"
+  - "SeaReactNative (from `../../../node_modules/@bankerise/sea-react-native`)"
   - Yoga (from `../../../node_modules/react-native/ReactCommon/yoga`)
 
 EXTERNAL SOURCES:
@@ -2082,7 +2082,7 @@ EXTERNAL SOURCES:
   SEACore:
     :path: "../../../packages/sea-core-ios"
   SeaReactNative:
-    :path: "../../../node_modules/@bankerise-platform/sea-react-native"
+    :path: "../../../node_modules/@bankerise/sea-react-native"
   Yoga:
     :path: "../../../node_modules/react-native/ReactCommon/yoga"
 

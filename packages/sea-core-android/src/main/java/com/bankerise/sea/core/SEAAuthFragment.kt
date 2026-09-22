@@ -32,6 +32,7 @@ class SEAAuthFragment : androidx.fragment.app.Fragment() {
                     putString(SEAAuthActivity.EXTRA_PRESENTATION, config.presentation.name)
                     putLong(SEAAuthActivity.EXTRA_TIMEOUT_MS, config.timeoutMs)
                     putString(SEAAuthActivity.EXTRA_CAPTURE_POLICY, config.capturePolicy.name)
+                    putStringArrayList(SEAAuthActivity.EXTRA_ALLOWED_SCHEMES, ArrayList(config.allowedSchemes))
                 }
             }
         }
@@ -49,11 +50,13 @@ class SEAAuthFragment : androidx.fragment.app.Fragment() {
             args.getStringArrayList(SEAAuthActivity.EXTRA_ALLOWED_DOMAINS) ?: emptyList(),
             args.getString(SEAAuthActivity.EXTRA_PRESENTATION, "SHEET"),
             args.getLong(SEAAuthActivity.EXTRA_TIMEOUT_MS, 120_000L),
-            args.getString(SEAAuthActivity.EXTRA_CAPTURE_POLICY, "WARN")
+            args.getString(SEAAuthActivity.EXTRA_CAPTURE_POLICY, "WARN"),
+            args.getStringArrayList(SEAAuthActivity.EXTRA_ALLOWED_SCHEMES)
         )
         val env = SEAEnvironment(
             authDomains = config.allowedDomains.mapTo(HashSet()) { SEAEnvironment.normalizeHost(it) },
-            callbackScheme = config.callbackScheme
+            callbackScheme = config.callbackScheme,
+            allowedSchemes = config.allowedSchemes.mapTo(HashSet()) { it.lowercase() }
         )
         val userCallbacks = SEASession.takePendingCallbacks()
 

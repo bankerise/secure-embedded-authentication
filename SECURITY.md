@@ -1,40 +1,42 @@
-# Security Policy
+# Security policy
 
-This project ships an authentication security core. Please report
-vulnerabilities responsibly and do not open a public GitHub issue for
-anything that could be exploitable.
+SEA is an authentication component, so we take security reports seriously.
+Thank you for helping keep it and its users safe.
 
 ## Reporting a vulnerability
 
-Email **`<security-contact@your-domain>`** (placeholder — replace with a real
-monitored address before publishing) with:
+**Please don't open a public issue, discussion or pull request for security
+problems.**
 
-- A description of the vulnerability and its potential impact.
-- Steps to reproduce (a minimal repro project or PoC, if possible).
-- The affected package(s) and version(s) — `sea-core-ios`, `sea-react-native`,
-  or the Keycloak theme in `themes/`.
+Report it privately through
+[GitHub's private vulnerability reporting](https://github.com/bankerise/secure-embedded-authentication/security/advisories/new).
+Please include:
 
-We aim to acknowledge reports within **3 business days** and to provide a
-remediation timeline within **10 business days** of confirming the issue.
+- What the issue is and what an attacker could do with it
+- Steps to reproduce (a small sample project or proof of concept helps a lot)
+- Affected package(s) and version(s)
+
+We aim to acknowledge reports within **3 business days** and to share a fix
+timeline within **10 business days** of confirming the issue. We'll credit
+you in the advisory unless you prefer otherwise.
 
 ## Scope
 
 In scope:
 
-- `packages/sea-core-ios` — the embedded-WebView auth core.
-- `packages/sea-react-native` — the Fabric bridge.
-- `themes/` — the Keycloak theme shipped alongside SEA.
+- `packages/sea-core-ios`, the iOS SDK
+- `packages/sea-core-android`, the Android SDK
+- `packages/sea-react-native`, the React Native wrapper
+- `themes/`, the Keycloak login theme
 
-Out of scope (see [bankerise_sea_specs-v1.0.md](bankerise_sea_specs-v1.0.md)
-§3/§15/§16 for the reasoning):
+Out of scope:
 
-- App Attest / device attestation — a host-app and API Gateway responsibility.
-- TLS/certificate pinning — configured by the integrating app, not by SEA.
-- The demo apps (`apps/demo-ios`, `apps/demo-rn`) are test harnesses, not
-  production software; issues specific to them (e.g. hardcoded demo
-  credentials, mock gateway behavior) are expected and not vulnerabilities.
+- Certificate pinning and device attestation (App Attest, Play Integrity).
+  These are the integrating app's and backend's responsibility by design.
+- The demo apps and `infra/`. They are local test tools with intentionally
+  hard-coded credentials and relaxed settings.
 
 ## Supported versions
 
-This project is pre-1.0. Security fixes land on `develop` and are released
-under the latest `0.x` tag; there is no long-term-support branch yet.
+SEA is pre-1.0. Fixes are released in the latest `0.0.x` version of each
+package. Older versions don't receive backports.

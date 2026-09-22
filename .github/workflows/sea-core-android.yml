@@ -1,0 +1,46 @@
+name: sea-core-android Maven Central publish
+
+on:
+  push:
+    tags:
+      - 'sea-core-android/*.*.*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish-maven-central:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#sea-core-android/}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # The Android SDK ships preinstalled on ubuntu-latest (ANDROID_HOME).
+      - uses: gradle/actions/setup-gradle@v4
+
+      # sea-core-android has no standalone Gradle build — it's included as a
+      # project by apps/demo-android (spec §4.5), so that's the entry point.
+      - name: Unit tests
+        working-directory: apps/demo-android
+        run: ./gradlew :sea-core-android:testReleaseUnitTest
+
+      # Uploads to the Central Portal and releases automatically once
+      # validation passes (automaticRelease = true in build.gradle.kts).
+      - name: Publish to Maven Central
+        working-directory: apps/demo-android
+        run: ./gradlew :sea-core-android:publishAndReleaseToMavenCentral -PseaVersion="${{ steps.version.outputs.version }}"
+        env:
+          # Central Portal *user token* (not the portal login password).
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
+          # ASCII-armored private key; its public half must be on a keyserver.
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_SIGNING_PASSWORD }}

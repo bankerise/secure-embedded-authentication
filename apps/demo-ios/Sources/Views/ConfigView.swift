@@ -31,7 +31,7 @@ struct ConfigView: View {
                     // Not editable: the callback scheme is no longer a
                     // per-session SEAConfig knob — it's owned by
                     // SEAEnvironment, loaded once from this app's bundled
-                    // SEASecurityConfig.plist (api-contract-ios-v1.md §3.3).
+                    // SEASecurityConfig.plist (docs/design/api-contract-ios.md §3.3).
                     // Shown here read-only so the tester can still see
                     // what's actually enforced.
                     HStack {

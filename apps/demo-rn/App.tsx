@@ -13,7 +13,7 @@ import {
   purgeWebData,
   SecureAuthenticationView,
   subscribeToTelemetry,
-} from '@bankerise-platform/sea-react-native';
+} from '@bankerise/sea-react-native';
 import { startAuthorization as startMockAuthorization } from './src/mockGateway';
 import {
   getOauthLogin,

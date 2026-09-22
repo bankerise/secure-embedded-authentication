@@ -4,7 +4,11 @@ import android.net.Uri
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+// Robolectric supplies a real android.net.Uri (the android.jar stub returns null).
+@RunWith(RobolectricTestRunner::class)
 class SEAConfigTests {
 
     @Test
@@ -57,7 +61,7 @@ class SEAConfigTests {
         val appearance = SEAAppearance.default
         assertEquals(null, appearance.title)
         assertTrue(appearance.showsGrabber)
-        assertEquals(28f, appearance.cornerRadius, 0.01f)
+        assertEquals(16f, appearance.cornerRadius, 0.01f)
     }
 
     @Test

@@ -58,9 +58,7 @@ export type SecureAuthenticationViewProps = Readonly<{
  * (loaded by `SEAEnvironment`) and `bankerise-sea.properties` on Android
  * (loaded by `SEAPropertiesLoader`).
  */
-export function SecureAuthenticationView(
-  props: SecureAuthenticationViewProps
-) {
+export function SecureAuthenticationView(props: SecureAuthenticationViewProps) {
   const { appearance, onCaptured, onCancelled, onError, ...rest } = props;
 
   const handleCaptured = React.useCallback(

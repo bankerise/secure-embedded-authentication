@@ -1,7 +1,9 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("maven-publish")
+    id("com.vanniktech.maven.publish")
 }
 
 android {
@@ -53,6 +55,8 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        // Robolectric needs merged resources for tests that touch android.*
+        unitTests.isIncludeAndroidResources = true
     }
 }
 
@@ -63,36 +67,55 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.0.21")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("org.mockito:mockito-core:5.14.2")
 }
 
-// Distribution: there's no existing private Android Maven host in this org
-// (checked retail-mobile's real Gradle config before choosing this — only
-// google()/mavenCentral() anywhere), and an external host like GitHub
-// Packages would force every consumer to configure a PAT just to resolve a
-// transitive dependency. Instead sea-react-native bundles this as a
-// prebuilt AAR directly inside its own npm package
-// (packages/sea-react-native/android/local-maven/, included via that
-// package's "files" array) — zero external host, zero consumer
-// credentials, zero settings.gradle edits beyond normal RN autolinking.
+// Distribution: published to Maven Central (Central Portal, namespace
+// com.bankerise) by .github/workflows/sea-core-android.yml on a
+// `sea-core-android/X.Y.Z` tag. The version comes from the tag via
+// -PseaVersion; the default below is only used for local builds.
 //
-// Regenerate after any sea-core-android change, then commit the output:
-//   cd apps/demo-android && ./gradlew :sea-core-android:publishReleasePublicationToLocalNpmRepository
-publishing {
-    publications {
-        create<MavenPublication>("release") {
-            groupId = "com.bankerise"
-            artifactId = "sea-core-android"
-            version = "0.0.1"
+// Local smoke test (unsigned, no credentials needed):
+//   cd apps/demo-android && ./gradlew :sea-core-android:publishToMavenLocal
+val seaVersion = providers.gradleProperty("seaVersion").getOrElse("0.0.1-SNAPSHOT")
 
-            afterEvaluate {
-                from(components["release"])
+mavenPublishing {
+    configure(AndroidSingleVariantLibrary(variant = "release", sourcesJar = true, publishJavadocJar = true))
+
+    publishToMavenCentral(automaticRelease = true)
+
+    // Central rejects unsigned artifacts, but local publishToMavenLocal
+    // runs shouldn't need a GPG key — sign only when CI provides one.
+    if (providers.gradleProperty("signingInMemoryKey").isPresent) {
+        signAllPublications()
+    }
+
+    coordinates("com.bankerise", "sea-core-android", seaVersion)
+
+    pom {
+        name.set("Bankerise SEA Core (Android)")
+        description.set("Bankerise SEA — hardened embedded WebView authentication core for Android.")
+        inceptionYear.set("2026")
+        url.set("https://github.com/bankerise/secure-embedded-authentication")
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
+                distribution.set("repo")
             }
         }
-    }
-    repositories {
-        maven {
-            name = "localNpm"
-            url = uri(file("../sea-react-native/android/local-maven"))
+        developers {
+            developer {
+                id.set("bankerise")
+                name.set("Bankerise")
+                url.set("https://bankerise.com")
+            }
+        }
+        scm {
+            url.set("https://github.com/bankerise/secure-embedded-authentication")
+            connection.set("scm:git:https://github.com/bankerise/secure-embedded-authentication.git")
+            developerConnection.set("scm:git:ssh://git@github.com/bankerise/secure-embedded-authentication.git")
         }
     }
 }

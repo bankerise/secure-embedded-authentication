@@ -33,8 +33,10 @@ public enum SEAAuthorizeURLValidator {
             return .failure(.userinfo)
         }
 
-        // 3. port is nil or 443.
-        if let port = components.port, port != 443 {
+        // 3. port is nil or a member of env.allowedPorts. Default {443}; a
+        //    host app may add a local dev port via SEASecurityConfig.plist's
+        //    AllowedPorts key (never in production).
+        if let port = components.port, !env.allowedPorts.contains(port) {
             return .failure(.port)
         }
 

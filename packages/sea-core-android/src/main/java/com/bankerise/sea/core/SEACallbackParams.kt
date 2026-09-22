@@ -30,12 +30,24 @@ data class SEACallbackParams(val raw: Map<String, String>) {
          * requirements (§10) call for.
          */
         fun extract(uri: Uri): SEACallbackParams {
+            // Parsed by hand: Uri.getQueryParameter returns the FIRST value of
+            // a duplicated key, and getQueryParameters doesn't decode '+' as a
+            // space. Here later pairs overwrite earlier ones (last-value-wins,
+            // parity with iOS) and '+' decodes to a space. A key without a
+            // value (?foo&bar=1) is kept as "".
             val raw = mutableMapOf<String, String>()
-            for (name in uri.queryParameterNames) {
-                // getQueryParameter returns null for keys without values (?foo&bar=1)
-                raw[name] = uri.getQueryParameter(name) ?: ""
+            val query = uri.encodedQuery ?: return SEACallbackParams(emptyMap())
+            for (pair in query.split('&')) {
+                if (pair.isEmpty()) continue
+                val eq = pair.indexOf('=')
+                val name = decode(if (eq >= 0) pair.substring(0, eq) else pair)
+                if (name.isEmpty()) continue
+                raw[name] = if (eq >= 0) decode(pair.substring(eq + 1)) else ""
             }
             return SEACallbackParams(raw.toMap())
         }
+
+        private fun decode(component: String): String =
+            Uri.decode(component.replace('+', ' '))
     }
 }

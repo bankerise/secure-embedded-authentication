@@ -4,7 +4,11 @@ import android.net.Uri
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+// Robolectric supplies a real android.net.Uri (the android.jar stub returns null).
+@RunWith(RobolectricTestRunner::class)
 class SEANavigationPolicyTest {
 
     private val env = SEAEnvironment(
@@ -124,7 +128,32 @@ class SEANavigationPolicyTest {
         )
         val decision = SEANavigationPolicy.decide(request, env, emptyList())
         assertTrue(decision is SEANavigationDecision.Block)
-        assertEquals("scheme_not_https", (decision as SEANavigationDecision.Block).reason)
+        assertEquals("scheme_not_allowed", (decision as SEANavigationDecision.Block).reason)
+    }
+
+    @Test
+    fun `http allowed when host app opts in`() {
+        val devEnv = env.copy(allowedSchemes = setOf("https", "http"))
+        val request = SEANavigationRequest(
+            url = Uri.parse("http://localhost:8080/realms/demo/login-actions/reset-credentials"),
+            isMainFrame = true,
+            currentPageHost = "localhost"
+        )
+        val decision = SEANavigationPolicy.decide(request, devEnv, emptyList())
+        assertEquals(SEANavigationDecision.Allow, decision)
+    }
+
+    @Test
+    fun `http opt-in still enforces the allowlist`() {
+        val devEnv = env.copy(allowedSchemes = setOf("https", "http"))
+        val request = SEANavigationRequest(
+            url = Uri.parse("http://evil.example.net/phish"),
+            isMainFrame = true,
+            currentPageHost = "localhost"
+        )
+        val decision = SEANavigationPolicy.decide(request, devEnv, emptyList())
+        assertTrue(decision is SEANavigationDecision.Block)
+        assertEquals("host_not_allowlisted", (decision as SEANavigationDecision.Block).reason)
     }
 
     @Test

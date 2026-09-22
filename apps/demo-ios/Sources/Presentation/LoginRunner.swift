@@ -52,7 +52,7 @@ final class LoginRunner: ObservableObject {
     private func presentSEASession(with startResult: GatewayStartResult) {
         // §21: authMode arrives from the gateway; EMBEDDED (or absent) -> SEA.
         // SYSTEM_BROWSER's classic in-app-browser path is explicitly out of
-        // SEA's / this demo's scope (api-contract-ios-v1.md front matter).
+        // SEA's / this demo's scope (docs/design/api-contract-ios.md front matter).
         guard let presenter = TopViewControllerResolver.topMostViewController() else {
             lastStartError = "No presenter UIViewController available."
             return

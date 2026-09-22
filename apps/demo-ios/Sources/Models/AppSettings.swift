@@ -6,7 +6,7 @@ import SEACore
 /// This is harness state only — it has no bearing on SEACore's own security
 /// posture. `allowedDomains` here is the *host-supplied narrowing list* that
 /// SEACore intersects with `SEAEnvironment.current.authDomains` (loaded from
-/// this app's own bundled `SEASecurityConfig.plist` — api-contract-ios-v1.md
+/// this app's own bundled `SEASecurityConfig.plist` — docs/design/api-contract-ios.md
 /// §3.3) — it can never widen what the core accepts.
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
@@ -42,7 +42,7 @@ final class AppSettings: ObservableObject {
         static let useMockGateway = true
         // A plausible local-Keycloak authorize URL. Must be https + a host in
         // the allowlist above, or SEACore's validator will reject it by design
-        // (api-contract-ios-v1.md §5, rule 1 and rule 5) — that's the point of
+        // (docs/design/api-contract-ios.md §5, rule 1 and rule 5) — that's the point of
         // the mock: it lets you exercise the WebView surface, but it does not
         // and should not bypass the core's own validation.
         // A COMPLETE, working authorize URL for the local infra/ Keycloak:

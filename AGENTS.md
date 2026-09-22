@@ -2,22 +2,27 @@
 
 ## Repository overview
 
-Bankerise SEA (Secure Embedded Authentication) — hardened embedded WebView auth
-for iOS using Keycloak, with a React Native Fabric bridge. Spec-driven; the
-normative spec is `bankerise_sea_specs-v1.0.md` and the iOS API contract is
-`docs/api-contract-ios-v1.md`.
+SEA (Secure Embedded Authentication) — hardened embedded WebView auth for
+iOS and Android against Keycloak / any OIDC provider, with a React Native
+Fabric bridge. Spec-driven; the normative spec is
+`docs/design/specification.md` and the iOS API contract is
+`docs/design/api-contract-ios.md`. User-facing docs live in `README.md` and
+`docs/` (keep them short and task-oriented; design detail goes in
+`docs/design/`).
 
 ## Structure
 
 ```
 packages/sea-core-ios/       Swift package — the audited security core
 packages/sea-react-native/   Fabric bridge wrapping sea-core-ios
-packages/sea-core-android/   Not started yet
+packages/sea-core-android/   Kotlin library — Android security core
+apps/demo-android/            Native Android harness (includes sea-core-android)
 apps/demo-ios/               Native device-lab harness (XcodeGen)
 apps/demo-rn/                RN bridge validation harness
 infra/                       Keycloak dev stack + realm provisioning
 themes/                      Keycloak login themes (mounted into Docker)
-Specs/                       Per-package spec snapshots
+Specs/                       CocoaPods spec index for SEACore
+docs/                        User guides; docs/design/ holds the spec + contracts
 ```
 
 ## Commands
@@ -121,10 +126,14 @@ yarn test
 - **Yarn classic (v1) workspaces.** Root `package.json` defines workspaces for
   `packages/sea-react-native` and `apps/demo-rn`. Do not upgrade to Yarn
   berry without testing the full RN toolchain.
-- **`sea-react-native` publishes to a private Nexus npm registry.** The
-  `publishConfig` in `packages/sea-react-native/package.json` points at
-  `repos.proxym-group.net`. Do not `npm publish` from a local machine
-  without the proper auth token setup.
+- **Releases are tag-driven from GitHub Actions — never publish locally.**
+  `sea-core-ios/X.Y.Z` → CocoaPods Specs gate, `sea-core-android/X.Y.Z` →
+  Maven Central (`com.bankerise:sea-core-android`), `sea-react-native/X.Y.Z`
+  → public npm (`@bankerise/sea-react-native`). The tag is the
+  version source for Android and npm. See CONTRIBUTING.md → Releases.
+- **`sea-react-native` resolves `sea-core-android` from Maven Central**, pinned
+  by `seaCoreAndroidVersion` in `packages/sea-react-native/android/build.gradle.kts`.
+  Publish the core before bumping that pin.
 
 ## Testing
 

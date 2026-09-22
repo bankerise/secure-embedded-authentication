@@ -36,7 +36,7 @@ apps/demo-rn/android/app/build/
 packages/sea-react-native/lib/
 
 # For demo-android
-apps/demo-android/android/.gradle/
+.gradle/
 apps/demo-android/android/build/
 apps/demo-android/android/app/build/
 apps/demo-android/.idea/
@@ -44,3 +44,9 @@ apps/demo-android/.kotlin/
 apps/demo-android/local.properties
 /graphify-out/
 /.idea/
+
+# Android SDK paths are per-machine
+local.properties
+
+# Local Claude Code settings
+.claude/settings.local.json

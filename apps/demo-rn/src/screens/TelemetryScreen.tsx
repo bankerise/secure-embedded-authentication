@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, FlatList, StyleSheet, Text, View } from 'react-native';
-import { copyToClipboard } from '@bankerise-platform/sea-react-native';
-import type { SEATelemetryEvent } from '@bankerise-platform/sea-react-native';
+import { copyToClipboard } from '@bankerise/sea-react-native';
+import type { SEATelemetryEvent } from '@bankerise/sea-react-native';
 
 export type TelemetryEntry = SEATelemetryEvent & { id: string };
 

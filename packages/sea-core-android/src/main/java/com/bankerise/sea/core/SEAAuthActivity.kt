@@ -39,6 +39,7 @@ class SEAAuthActivity : AppCompatActivity() {
         internal const val EXTRA_PRESENTATION = "sea.presentation"
         internal const val EXTRA_TIMEOUT_MS = "sea.timeout_ms"
         internal const val EXTRA_CAPTURE_POLICY = "sea.capture_policy"
+        internal const val EXTRA_ALLOWED_SCHEMES = "sea.allowed_schemes"
         internal const val EXTRA_USE_FALLBACK = "sea.use_fallback"
 
         fun createIntent(context: Context, config: SEAConfig): Intent {
@@ -49,6 +50,7 @@ class SEAAuthActivity : AppCompatActivity() {
                 putExtra(EXTRA_PRESENTATION, config.presentation.name)
                 putExtra(EXTRA_TIMEOUT_MS, config.timeoutMs)
                 putExtra(EXTRA_CAPTURE_POLICY, config.capturePolicy.name)
+                putStringArrayListExtra(EXTRA_ALLOWED_SCHEMES, ArrayList(config.allowedSchemes))
             }
         }
 
@@ -67,6 +69,7 @@ class SEAAuthActivity : AppCompatActivity() {
             val capturePolicy = try {
                 SEACapturePolicy.valueOf(intent.getStringExtra(EXTRA_CAPTURE_POLICY) ?: "WARN")
             } catch (_: Exception) { SEACapturePolicy.WARN }
+            val schemes = intent.getStringArrayListExtra(EXTRA_ALLOWED_SCHEMES)
 
             return SEAConfig(
                 authorizeUrl = android.net.Uri.parse(url),
@@ -74,7 +77,8 @@ class SEAAuthActivity : AppCompatActivity() {
                 allowedDomains = domains,
                 presentation = presentation,
                 timeoutMs = timeout,
-                capturePolicy = capturePolicy
+                capturePolicy = capturePolicy,
+                allowedSchemes = schemes?.takeIf { it.isNotEmpty() }?.toSet() ?: setOf("https")
             )
         }
 
@@ -88,7 +92,8 @@ class SEAAuthActivity : AppCompatActivity() {
             domains: List<String>,
             presentationRaw: String,
             timeout: Long,
-            capturePolicyRaw: String
+            capturePolicyRaw: String,
+            schemes: List<String>? = null
         ): SEAConfig {
             val presentation = try {
                 SEAPresentation.valueOf(presentationRaw)
@@ -103,7 +108,8 @@ class SEAAuthActivity : AppCompatActivity() {
                 allowedDomains = domains,
                 presentation = presentation,
                 timeoutMs = timeout,
-                capturePolicy = capturePolicy
+                capturePolicy = capturePolicy,
+                allowedSchemes = schemes?.takeIf { it.isNotEmpty() }?.toSet() ?: setOf("https")
             )
         }
     }
@@ -114,7 +120,8 @@ class SEAAuthActivity : AppCompatActivity() {
         val config = configFromIntent(intent)
         val env = SEAEnvironment(
             authDomains = config.allowedDomains.mapTo(HashSet()) { SEAEnvironment.normalizeHost(it) },
-            callbackScheme = config.callbackScheme
+            callbackScheme = config.callbackScheme,
+            allowedSchemes = config.allowedSchemes.mapTo(HashSet()) { it.lowercase() }
         )
 
         // Check if we should use fallback path (§10.4)
