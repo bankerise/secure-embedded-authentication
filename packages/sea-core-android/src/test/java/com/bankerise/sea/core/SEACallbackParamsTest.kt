@@ -62,6 +62,14 @@ class SEACallbackParamsTest {
     }
 
     @Test
+    fun `percent encoded plus stays a literal plus`() {
+        val uri = Uri.parse("seacb://callback?code=a%2Bb&state=x+y")
+        val params = SEACallbackParams.extract(uri)
+        assertEquals("a+b", params.code)
+        assertEquals("x y", params.state)
+    }
+
+    @Test
     fun `all properties accessible`() {
         val uri = Uri.parse(
             "seacb://callback?code=c&state=s&session_state=ss&error=err&error_description=desc"
