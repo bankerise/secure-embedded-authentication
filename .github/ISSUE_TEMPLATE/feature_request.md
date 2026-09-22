@@ -1,19 +1,14 @@
 ---
 name: Feature request
-about: Propose a change or addition
+about: Suggest an idea or improvement
 labels: enhancement
 ---
 
-## Problem
+**What problem are you trying to solve?**
 
-<!-- What can't you do today? -->
+**What would you like to happen?**
 
-## Proposed solution
+**Alternatives you've considered**
 
-## Spec impact
-
-<!-- Does this require a change to bankerise_sea_specs-v1.0.md? If so, sketch
-     the section/wording. Normative-behavior changes need a spec update in
-     the same PR (see CONTRIBUTING.md). -->
-
-## Alternatives considered
+**Platforms**
+<!-- iOS / Android / React Native -->

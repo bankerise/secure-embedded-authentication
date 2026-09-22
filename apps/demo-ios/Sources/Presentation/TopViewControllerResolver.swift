@@ -2,7 +2,7 @@ import UIKit
 
 /// SwiftUI -> UIKit presentation bridge.
 ///
-/// SEASession.start(config:from:callbacks:) (api-contract-ios-v1.md §4) wants a
+/// SEASession.start(config:from:callbacks:) (docs/design/api-contract-ios.md §4) wants a
 /// `UIViewController` to present from. Rather than wrapping the whole app in a
 /// `UIViewControllerRepresentable` (which would fight the SwiftUI App lifecycle
 /// for no benefit here), we resolve the current key-window's top-most presented

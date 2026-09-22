@@ -29,7 +29,11 @@ buildscript {
 // infra/README.md's Android section.
 allprojects {
     repositories {
-        maven { url "$rootDir/../../../packages/sea-react-native/android/local-maven" }
+        // sea-core-android comes from Maven Central. To test unreleased core
+        // changes, run `./gradlew :sea-core-android:publishToMavenLocal`
+        // from apps/demo-android and bump seaCoreAndroidVersion in
+        // packages/sea-react-native/android/build.gradle.kts to match.
+        mavenLocal()
     }
 }
 

@@ -1,88 +1,119 @@
-# Contributing
+# Contributing to SEA
 
-Thanks for your interest in Bankerise SEA. This is a monorepo containing an
-iOS security core, a React Native bridge, and their test/demo harnesses.
+Thanks for helping out! Bug reports, docs fixes and code are all welcome.
+Please follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## Layout
+> **Security issues:** please don't open a public issue. See
+> [SECURITY.md](SECURITY.md).
 
-```
-packages/sea-core-ios/     Swift package — the audited security core
-packages/sea-react-native/ Fabric bridge wrapping sea-core-ios (spec §7)
-apps/demo-ios/              Native device-lab harness
-apps/demo-rn/                Bridge validation harness only
-infra/                       Keycloak dev stack + realm export
-themes/                      Keycloak theme shipped alongside SEA
-docs/                        Spec + API contract
-```
+## Getting set up
 
-See [README.md](README.md) for prerequisites and setup, and
-[bankerise_sea_specs-v1.0.md](bankerise_sea_specs-v1.0.md) for the
-normative spec every change here should trace back to.
-
-## Ground rules
-
-- **`sea-react-native` is a pure bridge** (spec §4.2/§7.4): it may not import
-  networking, crypto, storage, or WebView APIs. All auth logic lives in
-  `sea-core-ios`. A CI lint enforces this — don't try to route around it.
-- **Don't widen the allowlist model.** Host-supplied `allowedDomains` are
-  *intersected* with the compiled-in list, never used to replace or expand
-  it (spec §7.1/§7.3).
-- Changes to normative behavior should update
-  [bankerise_sea_specs-v1.0.md](bankerise_sea_specs-v1.0.md) in the same PR,
-  not as a follow-up.
-
-## Development setup
+| Tool | Version | Needed for |
+|---|---|---|
+| Xcode + CocoaPods | Xcode 26+ | iOS SDK, iOS and RN demos |
+| [XcodeGen](https://github.com/yonaskolb/XcodeGen) | latest | iOS demo |
+| Android Studio + JDK 17 | — | Android SDK and demo |
+| Node + Yarn 1 | Node 22.13+ (see `.nvmrc`) | React Native package and demo |
+| Docker | — | Local Keycloak |
 
 ```bash
-# 1. Keycloak
-docker compose -f infra/docker-compose.yml up -d
+git clone https://github.com/bankerise/secure-embedded-authentication.git
+cd secure-embedded-authentication
+nvm use && yarn install
+```
 
-# 2. Core tests
+To run everything against a local Keycloak, see
+[docs/demo-apps.md](docs/demo-apps.md).
+
+## Running the checks
+
+```bash
+# iOS SDK
 cd packages/sea-core-ios
 xcodebuild test -scheme SEACore -destination 'platform=iOS Simulator,name=iPhone 17'
 
-# 3. RN bridge
-nvm use && yarn install
-cd apps/demo-rn/ios && pod install && cd ..
-yarn ios
+# Android SDK (the Gradle build lives in the demo app)
+cd apps/demo-android
+./gradlew :sea-core-android:testReleaseUnitTest
+
+# React Native package
+cd packages/sea-react-native
+yarn typecheck && yarn lint && yarn test
 ```
 
-## Commit messages
+CI runs the same checks on every pull request.
 
-`sea-react-native` uses [commitlint](https://commitlint.js.org/) with the
-conventional-commits preset (`@commitlint/config-conventional`) to drive its
-changelog generation. Use `type(scope): summary` — e.g.
-`fix(sea-react-native): forward onError code through the Fabric event`.
+## Ground rules
+
+These keep SEA secure, so reviews enforce them:
+
+- **Security logic lives in the native SDKs only.** `sea-react-native` just
+  passes props in and events out. It must not use networking, crypto,
+  storage or WebView APIs.
+- **The allowlist can only be narrowed.** Domains passed at runtime are
+  intersected with the app's bundled config, never added to it.
+- **Secure by default.** The SDKs load `https` only unless the host app's
+  *bundled* config opts in to `http` (`AllowedSchemes` / `allowedSchemes`)
+  for local development. Never add runtime switches, TLS-validation
+  exceptions or a hidden "dev mode" to the SDKs. The demo stack in `infra/`
+  uses real HTTPS.
+- **iOS and Android stay in sync.** A behavior change in one SDK needs the
+  matching change in the other, or an issue tracking it.
+- **Behavior changes update the spec.** If you change how SEA behaves, update
+  [docs/design/specification.md](docs/design/specification.md) in the same
+  pull request. Code comments like `§6.2` refer to its sections.
 
 ## Pull requests
 
-- Keep PRs scoped to one package/concern where possible — this is a monorepo
-  spanning Swift, TypeScript, and Keycloak theme code, and mixed-concern PRs
-  are hard to review.
-- State how you verified the change (simulator run, `xcodebuild test`,
-  `yarn typecheck`/`lint`/`test`) — "it builds" isn't a verification step for
-  UI or auth-flow changes.
-- Security-relevant changes: see [SECURITY.md](SECURITY.md) before opening a
-  public PR with exploit details.
+1. Fork the repo and branch off `develop`.
+2. Keep each PR focused on one package or concern.
+3. Use [Conventional Commits](https://www.conventionalcommits.org/):
+   `fix(sea-core-ios): reject userinfo in authorize URL`.
+4. Say how you tested it. For UI or login-flow changes, "it builds" isn't
+   enough. Include a simulator or device run.
+5. Add a line to [CHANGELOG.md](CHANGELOG.md) under *Unreleased* if users
+   will notice the change.
 
-## Releases
+## Releasing (maintainers)
 
-Both `sea-core-ios` (CocoaPods, via the `Specs/` index committed in this
-repo) and `sea-react-native` (npm) are released by pushing a tag shaped
-`sea-core-ios/X.Y.Z` or `sea-react-native/X.Y.Z`, which triggers the
-matching GitHub Actions workflow in `.github/workflows/`.
+Each package is released independently by pushing a tag. GitHub Actions does
+the rest.
 
-For `sea-core-ios`, the `Specs/SEACore/<version>/SEACore.podspec.json`
-index entry must be regenerated and committed *before* tagging (the
-release-gate workflow fails the tag otherwise):
+| Package | Tag | Published to |
+|---|---|---|
+| iOS `SEACore` | `sea-core-ios/X.Y.Z` | CocoaPods spec index in this repo (`Specs/`) |
+| Android `sea-core-android` | `sea-core-android/X.Y.Z` | Maven Central |
+| React Native `@bankerise/sea-react-native` | `sea-react-native/X.Y.Z` | npm |
+
+**Android and React Native.** The version comes from the tag:
 
 ```bash
-export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8   # CocoaPods needs a UTF-8 locale
-# after bumping s.version in SEACore.podspec:
-mkdir -p Specs/SEACore/<version>
-pod ipc spec packages/sea-core-ios/SEACore.podspec > Specs/SEACore/<version>/SEACore.podspec.json
-git add packages/sea-core-ios/SEACore.podspec Specs/SEACore/<version>
-git commit -m "Release sea-core-ios <version>"
-git tag "sea-core-ios/<version>"
-git push origin develop && git push origin "sea-core-ios/<version>"
+git tag sea-core-android/0.0.2 && git push origin sea-core-android/0.0.2
+git tag sea-react-native/0.0.2 && git push origin sea-react-native/0.0.2
 ```
+
+If a React Native release needs a new Android SDK version, release the
+Android SDK first, then bump `seaCoreAndroidVersion` in
+`packages/sea-react-native/android/build.gradle.kts`.
+
+**iOS.** Bump `s.version` in `packages/sea-core-ios/SEACore.podspec`,
+regenerate the spec index entry and commit it *before* tagging (CI checks
+they match):
+
+```bash
+export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+VERSION=0.0.2
+mkdir -p Specs/SEACore/$VERSION
+pod ipc spec packages/sea-core-ios/SEACore.podspec > Specs/SEACore/$VERSION/SEACore.podspec.json
+git add packages/sea-core-ios/SEACore.podspec Specs/SEACore/$VERSION
+git commit -m "chore(sea-core-ios): release $VERSION"
+git tag sea-core-ios/$VERSION && git push origin develop sea-core-ios/$VERSION
+```
+
+**Repository secrets**
+
+| Secret | Used for |
+|---|---|
+| `SONATYPE_USERNAME` / `SONATYPE_PASSWORD` | Maven Central. A Central Portal *user token*, not your login |
+| `GPG_SIGNING_KEY` / `GPG_SIGNING_PASSWORD` | Signing Maven artifacts. ASCII-armored private key and passphrase. The public key must be on `keyserver.ubuntu.com` |
+| `NPM_TOKEN` | npm. Only needed until npm trusted publishing is configured for `sea-react-native.yml` |

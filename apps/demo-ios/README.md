@@ -7,7 +7,7 @@ posture — should be answerable from this app.
 
 This app contains **no security logic of its own**. All authorize-URL
 validation and in-WebView navigation policy live in `SEACore`
-(`packages/sea-core-ios/`, built against `docs/api-contract-ios-v1.md`). This
+(`packages/sea-core-ios/`, built against `docs/design/api-contract-ios.md`). This
 app only: persists tester-facing config, runs the §6.1 two-hop gateway start
 sequence (or a mock), calls into `SEACore`'s public API, and displays what
 comes back.
@@ -30,7 +30,7 @@ The app target depends on the local Swift package at
 `../../packages/sea-core-ios` (product `SEACore`), declared in `project.yml`
 via `packages:` / `dependencies: [package: SEACore]`. That package is being
 built in parallel — if it's missing or its API doesn't match
-`docs/api-contract-ios-v1.md` yet, `xcodegen generate` will still succeed
+`docs/design/api-contract-ios.md` yet, `xcodegen generate` will still succeed
 (it's just a project reference) but `xcodebuild` will fail at Swift Package
 Manager resolution or at the `import SEACore` / API call sites in this app's
 source. That is expected until the core package catches up to the contract.
@@ -113,31 +113,3 @@ only ever loads `https` authorize URLs per §6.2 and needs no ATS exception.
 **This exception must never ship.** Delete the entire
 `NSAppTransportSecurity` block from `Sources/Info.plist` before any build of
 this app leaves a developer's machine (TestFlight, ad hoc, or App Store).
-
-## Contract ambiguities hit while building this
-
-1. **Fuzz screen validation surface.** `docs/api-contract-ios-v1.md` §5
-   exposes exactly one public validator,
-   `SEAAuthorizeURLValidator.validate(_:against:narrowedBy:)`, which is scoped
-   to the *authorize URL* (§6.2) — evaluated once, before any WebView
-   navigation happens. The *navigation policy* (§6 of the contract / spec
-   §7.3) that governs in-WebView navigation decisions (blocked schemes,
-   allowlist checks on subsequent navigations, the callback-scheme preempt) is
-   implemented inside `SEACore`'s `WKNavigationDelegate` and is not exposed as
-   a standalone callable API. The Fuzz screen therefore runs its corpus
-   through the authorize-URL validator, not the live navigation-delegate code
-   path. For every entry in this corpus the two policies should agree (same
-   scheme/host/userinfo/length rules), but this is worth the core team
-   confirming — and if a future phase wants the fuzz screen to exercise the
-   *actual* navigation delegate, the contract will need to expose that as a
-   testable seam (or the demo would need to drive a real WKWebView through
-   each URL, which is a materially different, much heavier test).
-2. **Local dev TLS.** The authorize-URL validator requires `scheme == https`
-   with no documented dev/debug exception (unlike, say, TLS certificate
-   handling, which explicitly documents "no debug bypass" — scheme has no
-   such caveat either way). A plain-HTTP local Keycloak (the common
-   `http://localhost:8080` dev setup) will always fail `.scheme` validation
-   when its authorize URL is handed to `SEACore`. Local infra will need to
-   terminate TLS on an allowlisted host for the embedded (non-mock) flow to
-   be exercisable at all — flagging this so `infra/` and the core team can
-   reconcile expectations.

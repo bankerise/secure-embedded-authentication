@@ -267,9 +267,10 @@ and all further callbacks are suppressed. This is invariant-tested.
 narrowedBy hostAllowlist: [String]) -> Result<URL, SEAInvalidURLReason>`
 
 Rules, evaluated in order, all must pass:
-1. `scheme == "https"` (case-insensitive) → else `.scheme`
+1. `scheme` ∈ `env.allowedSchemes` (case-insensitive; default `{"https"}`)
+   → else `.scheme`
 2. no `user` and no `password` component → else `.userinfo`
-3. `port` is nil or 443 → else `.port`
+3. `port` is nil or ∈ `env.allowedPorts` (default `{443}`) → else `.port`
 4. `absoluteString.utf8.count <= 2048` → else `.length`
 5. host is non-nil, lowercased, and a member of the **effective allowlist**
    → else `.host`
@@ -290,11 +291,13 @@ Evaluated in `WKNavigationDelegate.decidePolicyFor` in this exact order:
    query params, fire `onCaptured`, emit `AUTH_COMPLETED`. Never allowed to
    proceed, never dispatched to the OS.
 2. `about:blank` for the initial frame: allow.
-3. `scheme == "https"` AND host ∈ effective allowlist AND
+3. `scheme` ∈ `env.allowedSchemes` (default `{"https"}`) AND host ∈
+   effective allowlist AND
    (main frame OR same-origin subresource): allow.
 4. Everything else: cancel, emit `AUTH_NAV_BLOCKED { scheme, host_hash }`.
 
-Explicitly blocked schemes: `http`, `file`, `content`, `intent`, `javascript`,
+Explicitly blocked schemes: `http` (unless opted in for local development,
+see the React Native contract §4.1), `file`, `content`, `intent`, `javascript`,
 `data`, `tel`, `mailto`, and any custom scheme other than `callbackScheme`.
 
 `WKUIDelegate.createWebViewWith`: if the target URL is allowlisted, load it in

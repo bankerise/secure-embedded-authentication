@@ -22,7 +22,7 @@
 	<string>1</string>
 
 	<!--
-	 §6.5 / §8.2 (api-contract-ios-v1.md §7): WKAppBoundDomains scopes the WebView's
+	 §6.5 / §8.2 (docs/design/api-contract-ios.md §7): WKAppBoundDomains scopes the WebView's
 	 App-Bound Domains restriction (limitsNavigationsToAppBoundDomains = true, enforced
 	 inside SEACore). "auth.bank.local" is the demo/dev auth domain used by the local
 	 infra Keycloak realm; "localhost" is included so the fuzz/mock corpus and local

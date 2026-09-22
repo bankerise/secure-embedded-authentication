@@ -1,25 +1,28 @@
 ---
 name: Bug report
-about: Something in sea-core-ios, sea-react-native, or a demo app isn't working
+about: Something isn't working as expected
 labels: bug
 ---
 
-**Note:** if this is a security vulnerability, do **not** open a public
-issue — see [SECURITY.md](../../SECURITY.md) instead.
+<!-- Security vulnerability? Please don't file it here. See SECURITY.md. -->
 
-## Package/app affected
+**Package and version**
+<!-- e.g. @bankerise/sea-react-native 0.0.1, SEACore 0.0.1, sea-core-android 0.0.1 -->
 
-<!-- sea-core-ios / sea-react-native / demo-ios / demo-rn / themes -->
+**What happened?**
 
-## Version
+**What did you expect?**
 
-## Expected behavior
+**Steps to reproduce**
 
-## Actual behavior
+1.
+2.
 
-## Steps to reproduce
+**Environment**
 
-## Environment
+- Device / OS version:
+- Xcode / Android Studio / React Native version:
+- Identity provider (e.g. Keycloak 26):
 
-- OS / device:
-- Xcode / Node version:
+**Logs or screenshots**
+<!-- Remove any codes, tokens or personal data first. -->

@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  react-native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - name: Typecheck, lint, test
+        working-directory: packages/sea-react-native
+        run: yarn typecheck && yarn lint && yarn test
+      - name: Build package
+        working-directory: packages/sea-react-native
+        run: yarn prepare
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests
+        working-directory: apps/demo-android
+        run: ./gradlew :sea-core-android:testReleaseUnitTest
+
+  ios:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests
+        working-directory: packages/sea-core-ios
+        run: |
+          DEVICE=$(xcrun simctl list devices available | grep -m1 -o 'iPhone [^(]*' | sed 's/ *$//')
+          echo "Using simulator: $DEVICE"
+          xcodebuild test -scheme SEACore -destination "platform=iOS Simulator,name=$DEVICE"
+      - name: Lint podspec
+        env:
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+        run: pod lib lint packages/sea-core-ios/SEACore.podspec --allow-warnings

@@ -33,7 +33,7 @@ struct TelemetryLogEntry: Identifiable {
     }()
 }
 
-/// Implements SEATelemetrySink (api-contract-ios-v1.md §3.6) and buffers every
+/// Implements SEATelemetrySink (docs/design/api-contract-ios.md §3.6) and buffers every
 /// event SEACore emits so the tester can verify §20 events fire live, on device.
 /// This is how §23.2's "must be blocked and telemetered" requirement is checked
 /// visually for the navigation fuzz corpus, and how AUTH_* lifecycle events are

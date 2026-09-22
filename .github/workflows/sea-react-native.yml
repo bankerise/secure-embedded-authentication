@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: read
+  # npm provenance + trusted publishing (OIDC).
+  id-token: write
 
 jobs:
   publish-npm:
@@ -18,6 +20,10 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing needs npm >= 11.5.1; Node 22's bundled npm is older.
+      - name: Update npm
+        run: npm install -g npm@latest
 
       - name: Enable Corepack
         run: corepack enable
@@ -34,14 +40,21 @@ jobs:
 
       - name: Update package version
         working-directory: packages/sea-react-native
-        run: npm version "${{ steps.version.outputs.version }}" --no-git-tag-version
+        run: npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version
+
+      - name: Typecheck and test
+        working-directory: packages/sea-react-native
+        run: yarn typecheck && yarn test
 
       - name: Build package
         working-directory: packages/sea-react-native
         run: yarn prepare
 
+      # With a trusted publisher configured on npmjs.com, no token is needed
+      # and NPM_TOKEN can be deleted. The token is still required for the
+      # very first publish, before the package exists on npm.
       - name: Publish to npm
         working-directory: packages/sea-react-native
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

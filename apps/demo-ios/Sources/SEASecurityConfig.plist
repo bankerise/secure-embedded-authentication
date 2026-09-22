@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<!--
-	SEACore's host-app-supplied security config (api-contract-ios-v1.md §3.3).
+	SEACore's host-app-supplied security config (docs/design/api-contract-ios.md §3.3).
 	Bundled into THIS app target (SEADemo), not into sea-core-ios — SEACore
 	itself has no compile-time environment-flavor concept anymore; every
 	integrating app now ships its own copy of this file.

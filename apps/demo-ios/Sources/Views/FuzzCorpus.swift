@@ -3,7 +3,7 @@ import Foundation
 /// Hardcoded hostile-URL corpus for the §23.2 navigation-fuzzing manual check.
 ///
 /// IMPORTANT — contract note (see README "Fuzz screen vs §7.3 navigation policy"):
-/// the Phase-1 core contract (docs/api-contract-ios-v1.md) exposes exactly one
+/// the Phase-1 core contract (docs/design/api-contract-ios.md) exposes exactly one
 /// public validation entry point, `SEAAuthorizeURLValidator.validate` (§5). The
 /// full in-WebView navigation policy (§6 of the contract / spec §7.3) — which is
 /// what actually decides allow/block for a URL the WebView is mid-navigation to —

@@ -36,7 +36,7 @@ docker compose up -d
 
 The passkey RP ID (§10.3) and the iOS Associated Domain are both fixed to
 `auth.bank.local`, not `localhost`. Point it at the loopback address —
-**this is not something Claude/automation can do; run it yourself**:
+run this yourself (it needs sudo):
 
 ```bash
 echo '127.0.0.1 auth.bank.local' | sudo tee -a /etc/hosts

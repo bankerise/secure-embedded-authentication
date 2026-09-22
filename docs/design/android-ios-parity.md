@@ -47,9 +47,9 @@ The Android implementation now covers **17 of 19 iOS source files** at the logic
 **File:** `packages/sea-core-android/src/main/java/com/bankerise/sea/core/SEAAuthorizeURLValidator.kt`
 
 All return statements have been uncommented. The URL validator now properly validates:
-- Scheme must be `https`
+- Scheme must be in `allowedSchemes` (default `https`)
 - No userinfo allowed
-- Port must be -1 (unset) or 443
+- Port must be in `allowedPorts` (default -1 (unset) or 443)
 - URL length must be ≤ 2048 bytes
 - Host must be in the effective allowlist
 

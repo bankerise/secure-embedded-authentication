@@ -5,7 +5,7 @@ options:
     iOS: "15.0"
 
 # Local SPM dependency on the core package under active parallel development.
-# See docs/api-contract-ios-v1.md for the normative API this app builds against.
+# See docs/design/api-contract-ios.md for the normative API this app builds against.
 packages:
   SEACore:
     path: ../../packages/sea-core-ios

@@ -34,8 +34,9 @@ export function subscribeToTelemetry(
     return () => {};
   }
   const emitter = new NativeEventEmitter(SeaTelemetryEmitter);
-  const subscription = emitter.addListener('SeaTelemetryEvent', (event: Object) =>
-    listener(event as SEATelemetryEvent)
+  const subscription = emitter.addListener(
+    'SeaTelemetryEvent',
+    (event: Object) => listener(event as SEATelemetryEvent)
   );
   return () => subscription.remove();
 }
