@@ -40,7 +40,7 @@ jobs:
 
       - name: Update package version
         working-directory: packages/sea-react-native
-        run: npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version
+        run: npm pkg set version="${{ steps.version.outputs.version }}"
 
       - name: Typecheck and test
         working-directory: packages/sea-react-native
