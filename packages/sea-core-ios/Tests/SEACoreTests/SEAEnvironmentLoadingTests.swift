@@ -62,6 +62,22 @@ final class SEAEnvironmentLoadingTests: XCTestCase {
         XCTAssertEqual(env.allowedSchemes, ["https"])
     }
 
+    func test_fixtureWithoutAllowedPortsKey_defaultsTo443Only() {
+        let env = SEAEnvironment.load(from: .module)
+        XCTAssertEqual(env.allowedPorts, [443])
+    }
+
+    func test_plistWithAllowedPorts_parsesIntoExpectedSet() {
+        silenceLoadFailureReporting()
+        let bundle = makeTempBundle(plistContents: [
+            "CallbackScheme": "bkrmob",
+            "AuthDomains": ["localhost"],
+            "AllowedPorts": [443, 8080],
+        ])
+        let env = SEAEnvironment.load(from: bundle)
+        XCTAssertEqual(env.allowedPorts, [443, 8080])
+    }
+
     // MARK: - Table-driven: every fail-closed path
 
     private struct Case {

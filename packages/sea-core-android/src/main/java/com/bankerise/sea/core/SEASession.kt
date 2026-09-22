@@ -74,7 +74,8 @@ object SEASession {
 
         val environment = SEAEnvironment(
             authDomains = config.allowedDomains.mapTo(HashSet()) { SEAEnvironment.normalizeHost(it) },
-            callbackScheme = config.callbackScheme
+            callbackScheme = config.callbackScheme,
+            allowedSchemes = config.allowedSchemes.mapTo(HashSet()) { it.lowercase() }
         )
         val validation = SEAAuthorizeURLValidator.validate(
             config.authorizeUrl, environment, config.allowedDomains,
@@ -127,7 +128,8 @@ object SEASession {
         if (intent.getBooleanExtra(SEAAuthActivity.EXTRA_USE_FALLBACK, false)) {
             val environment = SEAEnvironment(
                 authDomains = config.allowedDomains.mapTo(HashSet()) { SEAEnvironment.normalizeHost(it) },
-                callbackScheme = config.callbackScheme
+                callbackScheme = config.callbackScheme,
+                allowedSchemes = config.allowedSchemes.mapTo(HashSet()) { it.lowercase() }
             )
             val runner = SEAFallbackAuthRunner(activity, config, environment, callbacks)
             pendingFallbackRunner = runner

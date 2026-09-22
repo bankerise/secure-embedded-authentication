@@ -49,7 +49,7 @@ data class SEANavigationRequest(
  * Evaluated in this exact order, fail closed on any ambiguity:
  * 1. Callback-scheme match preempts everything → [SEANavigationDecision.Capture].
  * 2. `about:blank` for the initial frame → [SEANavigationDecision.Allow].
- * 3. `https` + host in the effective allowlist + (main frame OR
+ * 3. scheme in [SEAEnvironment.allowedSchemes] + host in the effective allowlist + (main frame OR
  *    same-origin subresource) → [SEANavigationDecision.Allow].
  * 4. Everything else → [SEANavigationDecision.Block].
  */
@@ -79,9 +79,11 @@ object SEANavigationPolicy {
             return SEANavigationDecision.Allow
         }
 
-        // 3. https + allowlisted host + (main frame or same-origin subresource).
-        if (scheme != "https") {
-            return SEANavigationDecision.Block(reason = "scheme_not_https")
+        // 3. allowed scheme + allowlisted host + (main frame or same-origin
+        //    subresource). Default {"https"}; "http" only when the host app
+        //    opted in for local development.
+        if (scheme !in env.allowedSchemes) {
+            return SEANavigationDecision.Block(reason = "scheme_not_allowed")
         }
 
         val rawHost = request.url.host

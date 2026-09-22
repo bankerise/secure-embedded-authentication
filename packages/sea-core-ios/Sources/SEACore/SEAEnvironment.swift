@@ -21,10 +21,24 @@ public struct SEAEnvironment {
     /// reachable from JS/React Native props.
     public let allowedSchemes: Set<String>
 
-    public init(authDomains: Set<String>, callbackScheme: String, allowedSchemes: Set<String> = ["https"]) {
+    /// Explicit ports `SEAAuthorizeURLValidator` accepts in the authorize URL
+    /// (contract §5, spec §6.2). A URL with no explicit port is always
+    /// accepted. Default `[443]`. Host apps may add a local dev port (e.g.
+    /// `8080`) via the `AllowedPorts` plist key — mirrors
+    /// `SEAConfig.allowedPorts` in `sea-core-android`. Native-config-only,
+    /// like `allowedSchemes`.
+    public let allowedPorts: Set<Int>
+
+    public init(
+        authDomains: Set<String>,
+        callbackScheme: String,
+        allowedSchemes: Set<String> = ["https"],
+        allowedPorts: Set<Int> = [443]
+    ) {
         self.authDomains = Set(authDomains.map(SEAEnvironment.normalizeHost))
         self.callbackScheme = callbackScheme
         self.allowedSchemes = allowedSchemes.isEmpty ? ["https"] : Set(allowedSchemes.map { $0.lowercased() })
+        self.allowedPorts = allowedPorts.isEmpty ? [443] : allowedPorts
     }
 
     /// Lowercases (ASCII-lowercased) and strips a single trailing dot, per the
@@ -100,6 +114,11 @@ public struct SEAEnvironment {
     /// <array>
     ///     <string>https</string>
     /// </array>
+    /// <!-- Optional. Omit entirely to keep the 443-only default. -->
+    /// <key>AllowedPorts</key>
+    /// <array>
+    ///     <integer>443</integer>
+    /// </array>
     /// ```
     private struct SecurityConfigPlist: Decodable {
         let CallbackScheme: String
@@ -110,6 +129,9 @@ public struct SEAEnvironment {
         /// plist that predates this key must keep enforcing https-only
         /// exactly as before.
         let AllowedSchemes: [String]?
+        /// Optional — absent or empty keeps the `[443]` default. Same
+        /// backward-compatibility rule as `AllowedSchemes`.
+        let AllowedPorts: [Int]?
     }
 
     /// Test seam only: the failure path below reports through this instead
@@ -171,7 +193,8 @@ public struct SEAEnvironment {
         return SEAEnvironment(
             authDomains: Set(decoded.AuthDomains),
             callbackScheme: decoded.CallbackScheme,
-            allowedSchemes: Set(decoded.AllowedSchemes ?? ["https"])
+            allowedSchemes: Set(decoded.AllowedSchemes ?? ["https"]),
+            allowedPorts: Set(decoded.AllowedPorts ?? [443])
         )
     }
 }

@@ -9,7 +9,11 @@ package com.bankerise.sea.core
  */
 data class SEAEnvironment(
     val authDomains: Set<String>,
-    val callbackScheme: String
+    val callbackScheme: String,
+    /** Lowercased URL schemes the WebView may navigate to (spec §7.3).
+     *  Default {"https"}; a host app may add "http" for local development
+     *  via [SEAConfig.allowedSchemes] (never in production). */
+    val allowedSchemes: Set<String> = setOf("https")
 ) {
     companion object {
         /**
