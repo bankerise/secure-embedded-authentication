@@ -64,7 +64,7 @@ class SEACallbackParamsTest {
     @Test
     fun `all properties accessible`() {
         val uri = Uri.parse(
-            "seacb://callback?code=c&state=s&session_state=ss&e=err&error_description=desc"
+            "seacb://callback?code=c&state=s&session_state=ss&error=err&error_description=desc"
         )
         val params = SEACallbackParams.extract(uri)
         assertEquals("c", params.code)

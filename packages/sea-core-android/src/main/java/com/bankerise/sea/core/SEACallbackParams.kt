@@ -32,8 +32,10 @@ data class SEACallbackParams(val raw: Map<String, String>) {
         fun extract(uri: Uri): SEACallbackParams {
             val raw = mutableMapOf<String, String>()
             for (name in uri.queryParameterNames) {
-                // getQueryParameter returns null for keys without values (?foo&bar=1)
-                raw[name] = uri.getQueryParameter(name) ?: ""
+                // getQueryParameter would return the FIRST value; take the last
+                // one for last-value-wins parity with iOS. A key without a
+                // value (?foo&bar=1) is kept as "".
+                raw[name] = uri.getQueryParameters(name).lastOrNull() ?: ""
             }
             return SEACallbackParams(raw.toMap())
         }

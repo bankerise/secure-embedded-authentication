@@ -61,7 +61,7 @@ class SEAConfigTests {
         val appearance = SEAAppearance.default
         assertEquals(null, appearance.title)
         assertTrue(appearance.showsGrabber)
-        assertEquals(28f, appearance.cornerRadius, 0.01f)
+        assertEquals(16f, appearance.cornerRadius, 0.01f)
     }
 
     @Test
