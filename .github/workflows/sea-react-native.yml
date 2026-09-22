@@ -50,11 +50,9 @@ jobs:
         working-directory: packages/sea-react-native
         run: yarn prepare
 
-      # With a trusted publisher configured on npmjs.com, no token is needed
-      # and NPM_TOKEN can be deleted. The token is still required for the
-      # very first publish, before the package exists on npm.
+      # Authenticates with npm trusted publishing (GitHub OIDC): no token.
+      # The trusted publisher on npmjs.com must name this repository and
+      # this workflow file (sea-react-native.yml).
       - name: Publish to npm
         working-directory: packages/sea-react-native
         run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
