@@ -116,4 +116,8 @@ git tag sea-core-ios/$VERSION && git push origin develop sea-core-ios/$VERSION
 |---|---|
 | `SONATYPE_USERNAME` / `SONATYPE_PASSWORD` | Maven Central. A Central Portal *user token*, not your login |
 | `GPG_SIGNING_KEY` / `GPG_SIGNING_PASSWORD` | Signing Maven artifacts. ASCII-armored private key and passphrase. The public key must be on `keyserver.ubuntu.com` |
-| `NPM_TOKEN` | npm. Only needed until npm trusted publishing is configured for `sea-react-native.yml` |
+
+npm needs no secret: `@bankerise/sea-react-native` uses
+[trusted publishing](https://docs.npmjs.com/trusted-publishers), linked to
+`.github/workflows/sea-react-native.yml`. If you rename that workflow, update
+the trusted publisher on npmjs.com too.
